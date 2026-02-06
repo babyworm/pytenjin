@@ -9,6 +9,7 @@ build/
 *.egg
 .eggs/
 *.cache
+tests/_test_*
 .tox/
 .venv/
 venv/

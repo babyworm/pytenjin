@@ -427,11 +427,13 @@ class EngineTest(object):
                 fn = lambda: marshal.load(f)
                 try:
                   if python3:
-                    ok (fn).raises(ValueError)        # non-marshal?
+                    ok (fn).raises((ValueError, EOFError))        # non-marshal?
                     if sys.version_info[1] == 0:     # python 3.0
                         ok (str(fn.exception)) == "bad marshal data"
                     else:                            # python 3.1 or later
-                        ok (str(fn.exception)) == "bad marshal data (unknown type code)"
+                        if isinstance(fn.exception, ValueError):
+                            ok (str(fn.exception)) == "bad marshal data (unknown type code)"
+                        # EOFError for Python 3.12+ is also acceptable
                   elif python2 and sys.version_info[1] >= 5:
                     ok (fn).raises(EOFError, "EOF read where object expected")  # non-marshal?
                 finally:

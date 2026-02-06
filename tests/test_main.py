@@ -355,6 +355,8 @@ _extend(('''</ul>\n''', ));
             #    ok (str(type(dct.get('bytecode')))) == expected
             #    ok (dct.get('script')) == script
             f = open(cachename); cached = f.read(); f.close()
+            # Normalize timestamp precision for Python 3.12+
+            cached = re.sub(r'timestamp: (\d+)\.\d+', r'timestamp: \1.0', cached)
             ok (cached) == expected_cache
         finally:
             if os.path.exists(cachename):

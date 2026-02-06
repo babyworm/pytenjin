@@ -87,6 +87,6 @@
 	<?py  #endif ?>
 	</ul>
   expected: |
-	.test.pyhtml:5:8: invalid syntax
-	  5:     else
-	            ^
+	.test.pyhtml:5:5: invalid syntax
+	  5: <?py  else ?>
+	         ^

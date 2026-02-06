@@ -56,7 +56,7 @@ class UsersGuideTest(object):
         os.chdir(self.CWD)
 
     def _test(self):
-        result_files = glob('result*.output')
+        result_files = sorted(glob('result*.output'))
         for fname in result_files:
             sys.stdout.write(' %s' % fname)
             result = open(fname).read()

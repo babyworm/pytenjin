@@ -1,4 +1,4 @@
 $ pytenjin -z syntaxerr.pyhtml
-syntaxerr.pyhtml:5:8: invalid syntax
-  5:         else
-            ^
+syntaxerr.pyhtml:5:9: invalid syntax
+  5: <?py     else ?>
+             ^

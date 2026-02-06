@@ -318,7 +318,7 @@ _extend(('''</ul>\n''', ));
             globals()['_html_module'] = _html_module
             t = tenjin.Template(None, input=input, escapefunc='_html_module.escape')
             output = t.render({'name': '&<>"'})
-            ok (output) == "<p>Hello &amp;&lt;&gt;\"!</p>"
+            ok (output) == "<p>Hello &amp;&lt;&gt;&quot;!</p>"
         if "passed False as escapefunc option then no function is used":
             t = tenjin.Template(None, input=input, escapefunc=False)
             output = t.render({'name': 'Haru&Kyon'})

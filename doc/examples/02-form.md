@@ -4,19 +4,19 @@
 
 ```html
 <?py #@ARGS action, params, label ?>
-<form action="${action}" method="post">
+<form action="{=action=}" method="post">
   <p>
     <label>Name:</label>
-    <input type="text" name="name" value="${params.get('name')}" />
+    <input type="text" name="name" value="{=params.get('name')=}" />
   </p>
   <p>
     <label>Gender:</label>
 <?py gender = params.get('gender') ?>
 <?py checked = {True:' checked="checked"', False:''} ?>
-    <input type="radio" name="gender" value="M" #{checked[gender=='M']} />Man
-    <input type="radio" name="gender" value="W" #{checked[gender=='W']} />Woman
+    <input type="radio" name="gender" value="M" {==checked[gender=='M']==} />Man
+    <input type="radio" name="gender" value="W" {==checked[gender=='W']==} />Woman
   </p>
-  <input type="submit" value="${label}" />
+  <input type="submit" value="{=label=}" />
 </form>
 ```
 
@@ -43,9 +43,9 @@
 ```html
 <html>
  <body>
-  <h1>${title}</h1>
+  <h1>{=title=}</h1>
   <div class="main-content">
-#{_content}
+{==_content==}
   </div>
  </body>
 </html>

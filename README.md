@@ -34,7 +34,7 @@ pip install pytenjin
 <table>
   <?py for item in items: ?>
   <tr>
-    <td>${item}</td>
+    <td>{=item=}</td>
   </tr>
   <?py #end ?>
 </table>
@@ -67,6 +67,17 @@ print(html)
   </tr>
 </table>
 ```
+
+## Template Syntax
+
+pyTenjin supports two expression syntaxes:
+
+- **`{=...=}`** - escaped expression (recommended)
+- **`{==...==}`** - raw expression (recommended)
+- `${...}` - escaped expression (deprecated)
+- `#{...}` - raw expression (deprecated)
+
+> **Note:** The `${...}` and `#{...}` syntax is deprecated and will be removed in a future version. Please use `{=...=}` and `{==...==}` instead.
 
 ## License
 

@@ -11,7 +11,7 @@ Command-line option '`-z`' checks syntax of template files.
 ```html
 <ul>
 <?py for item in items: ?>
- <li>${item}</li>
+ <li>{=item=}</li>
 <?py #endif ?>
 </ul>
 ```
@@ -38,7 +38,7 @@ Command-line option '-s' converts template file into Python script code.
 ```html
 <ul>
   <?py for item in items: ?>
-  <li>${item}</li>
+  <li>{=item=}</li>
   <?py #endfor ?>
 </ul>
 ```
@@ -84,8 +84,8 @@ Assume the following template file.
   <?py for item in items: ?>
   <?py     i += 1 ?>
   <tr>
-    <td>#{i}</td>
-    <td>${item}</td>
+    <td>{==i==}</td>
+    <td>{=item=}</td>
   </tr>
   <?py #endfor ?>
 </table>
@@ -180,7 +180,7 @@ You can execute template file in command-line.
 <?py items = ['<AAA>', 'B&B', '"CCC"'] ?>
 <ul>
   <?py for item in items: ?>
-  <li>${item}</li>
+  <li>{=item=}</li>
   <?py #endfor ?>
 </ul>
 ```
@@ -205,7 +205,7 @@ You can specify context data with command-line option '`-c`'.
 ```html
 <ul>
   <?py for item in items: ?>
-  <li>${item}</li>
+  <li>{=item=}</li>
   <?py #endfor ?>
 </ul>
 ```

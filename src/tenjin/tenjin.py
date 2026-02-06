@@ -233,15 +233,15 @@ def _dummy():
         return False
 
     def _p(arg):
-        """ex. '/show/'+_p("item['id']") => "/show/#{item['id']}" """
-        return '<`#%s#`>' % arg    # decoded into #{...} by preprocessor
+        """ex. '/show/'+_p("item['id']") => "/show/{==item['id']==}" """
+        return '<`#%s#`>' % arg    # decoded into {==...==} by preprocessor
 
     def _P(arg):
-        """ex. '<b>%s</b>' % _P("item['id']") => "<b>${item['id']}</b>" """
-        return '<`$%s$`>' % arg    # decoded into ${...} by preprocessor
+        """ex. '<b>%s</b>' % _P("item['id']") => "<b>{=item['id']=}</b>" """
+        return '<`$%s$`>' % arg    # decoded into {=...=} by preprocessor
 
     def _decode_params(s):
-        """decode <`#...#`> and <`$...$`> into #{...} and ${...}"""
+        """decode <`#...#`> and <`$...$`> into {==...==} and {=...=}"""
         global unquote
         if unquote is None:
             from urllib.parse import unquote
@@ -250,12 +250,12 @@ def _dummy():
             #return s.replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#039;', "'").replace('&amp;',  '&')
             return re.sub(r'&(lt|gt|quot|amp|#039);',  lambda m: dct[m.group(1)],  s)
         s = to_str(s)
-        s = re.sub(r'%3C%60%23(.*?)%23%60%3E', lambda m: '#{%s}' % unquote(m.group(1)), s)
-        s = re.sub(r'%3C%60%24(.*?)%24%60%3E', lambda m: '${%s}' % unquote(m.group(1)), s)
-        s = re.sub(r'&lt;`#(.*?)#`&gt;',   lambda m: '#{%s}' % unescape(m.group(1)), s)
-        s = re.sub(r'&lt;`\$(.*?)\$`&gt;', lambda m: '${%s}' % unescape(m.group(1)), s)
-        s = re.sub(r'<`#(.*?)#`>', r'#{\1}', s)
-        s = re.sub(r'<`\$(.*?)\$`>', r'${\1}', s)
+        s = re.sub(r'%3C%60%23(.*?)%23%60%3E', lambda m: '{==%s==}' % unquote(m.group(1)), s)
+        s = re.sub(r'%3C%60%24(.*?)%24%60%3E', lambda m: '{=%s=}' % unquote(m.group(1)), s)
+        s = re.sub(r'&lt;`#(.*?)#`&gt;',   lambda m: '{==%s==}' % unescape(m.group(1)), s)
+        s = re.sub(r'&lt;`\$(.*?)\$`&gt;', lambda m: '{=%s=}' % unescape(m.group(1)), s)
+        s = re.sub(r'<`#(.*?)#`>', r'{==\1==}', s)
+        s = re.sub(r'<`\$(.*?)\$`>', r'{=\1=}', s)
         return s
 
 helpers = create_module('tenjin.helpers', _dummy, sys=sys, re=re)

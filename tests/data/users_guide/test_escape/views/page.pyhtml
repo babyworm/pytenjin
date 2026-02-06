@@ -1,4 +1,4 @@
 <p>
-  escaped:     ${value}
-  not escaped: #{value}
+  escaped:     {=value=}
+  not escaped: {==value==}
 </p>

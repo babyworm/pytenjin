@@ -31,7 +31,7 @@ def link_to(label, action=None, id=None):
   <select name="lang">
 <?py table = { params['lang']: ' selected="selected"' } ?>
 <?PY for val, name in languages: ?>
-    <option value="${{val}}" #{table.get(#{{repr(val)}}, '')}>${{name}}</option>
+    <option value="${{val}}" {==table.get(#{{repr(val)}}, '')==}>${{name}}</option>
 <?PY #endfor ?>
   </select>
   <input type="submit" value="OK" />
@@ -50,18 +50,18 @@ $ pytenjin -a preprocess select.pyhtml
   <label>Select your language:</label>
   <select name="lang">
 <?py table = { params['lang']: ' selected="selected"' } ?>
-    <option value="en" #{table.get('en', '')}>Engilish</option>
-    <option value="fr" #{table.get('fr', '')}>French</option>
-    <option value="de" #{table.get('de', '')}>German</option>
-    <option value="es" #{table.get('es', '')}>Spanish</option>
-    <option value="ch" #{table.get('ch', '')}>Chinese</option>
-    <option value="ja" #{table.get('ja', '')}>Japanese</option>
+    <option value="en" {==table.get('en', '')==}>Engilish</option>
+    <option value="fr" {==table.get('fr', '')==}>French</option>
+    <option value="de" {==table.get('de', '')==}>German</option>
+    <option value="es" {==table.get('es', '')==}>Spanish</option>
+    <option value="ch" {==table.get('ch', '')==}>Chinese</option>
+    <option value="ja" {==table.get('ja', '')==}>Japanese</option>
   </select>
   <input type="submit" value="OK" />
 </form>
 <p>
   <a href="/app/index">Back</a> |
-  <a href="/app/show/#{params["id"]}">Show ${params["name"]}</a>
+  <a href="/app/show/{==params["id"]==}">Show {=params["name"]=}</a>
 </p>
 ```
 

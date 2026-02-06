@@ -10,6 +10,6 @@
 <select name="state">
   <option value="">-</option>
   <?PY for code in codes: ?>
-  <option value="#{{code}}"#{chk.get('#{{code}}', '')}>${{states[code]}}</option>
+  <option value="#{{code}}"{==chk.get('#{{code}}', '')==}>${{states[code]}}</option>
   <?PY #endfor ?>
 </select>

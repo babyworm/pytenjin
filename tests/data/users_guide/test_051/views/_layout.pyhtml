@@ -3,9 +3,9 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>

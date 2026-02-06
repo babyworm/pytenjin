@@ -650,8 +650,8 @@
 
   expected: |6
         <a href="/items/create"><b>Create</b></a>
-        <a href="/items/show/#{item['id']}">"Show ${item['name']}"</a>
-        &lt;b&gt;${item["name"]}&lt;/b&gt;
+        <a href="/items/show/{==item['id']==}">"Show {=item['name']=}"</a>
+        &lt;b&gt;{=item["name"]=}&lt;/b&gt;
 
   context: { item: { id: 101, name: foo } }
 #  expected: |

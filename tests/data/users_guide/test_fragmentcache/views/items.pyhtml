@@ -4,7 +4,7 @@
   <?py for _ in cache_as('items/1', 60): ?>
   <ul>
     <?py     for item in get_items(): ?>
-    <li>${item}</li>
+    <li>{=item=}</li>
     <?py     #endfor ?>
   </ul>
   <?py #endfor ?>

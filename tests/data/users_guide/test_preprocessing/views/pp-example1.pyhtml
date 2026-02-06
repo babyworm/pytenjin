@@ -1,4 +1,4 @@
 ## normal expression
-value = ${value}
+value = {=value=}
 ## with preprocessing
 value = ${{value}}

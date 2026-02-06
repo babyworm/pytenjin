@@ -17,8 +17,8 @@ from tenjin.escaped import is_escaped, as_escaped, to_escaped
 
 ## both are same notation
 input = r"""
-a = ${a}
-b = ${b}
+a = {=a=}
+b = {=b=}
 """
 
 ## but passed different data type
@@ -59,8 +59,8 @@ In addition, `SafeTemplate`/`SafeEngine` classes inhibits `#{...}` because some 
 
 |                | Template, Engine          | SafeTemplate, SafeEngine  |
 |----------------|---------------------------|---------------------------|
-| Escape html    | `${...}` or `{=...=}`    | `${...}` or `{=...=}`    |
-| Not escape     | `#{...}` or `{==...==}`  | only `{==...==}`          |
+| Escape html    | `{=...=}` or `${...}`    | `{=...=}` or `${...}`    |
+| Not escape     | `{==...==}` or `#{...}`  | only `{==...==}`          |
 
 ## Nested Layout Template
 
@@ -72,7 +72,7 @@ It is able to nest several layout template files.
 <?py #@ARGS _content ?>
 <html>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>
 ```
@@ -82,9 +82,9 @@ It is able to nest several layout template files.
 ```html
 <?py #@ARGS _content, title ?>
 <?py _context['_layout'] = '_site_layout.pyhtml' ?>
-<h2>${title}</h2>
+<h2>{=title=}</h2>
 <!-- content -->
-#{_content}
+{==_content==}
 <!-- /content -->
 ```
 
@@ -94,7 +94,7 @@ It is able to nest several layout template files.
 <?py #@ARGS post_content ?>
 <?py _context['_layout'] = '_blog_layout.pyhtml' ?>
 <div class="article">
-#{text2html(post_content)}
+{==text2html(post_content)==}
 </div>
 ```
 
@@ -188,16 +188,16 @@ It is able to capture parital of output. You can use this feature as an alternat
 ```html
 <?py ## from __future__ import with_statement  -- Not needed in Python 3 ?>
 <?py #@ARGS blog_post, recent_posts ?>
-<h2>#{blog_post['title']}</h2>
+<h2>{==blog_post['title']==}</h2>
 <div class="blog-post">
-#{text2html(blog_post['content'])}
+{==text2html(blog_post['content'])==}
 </div>
 
 <?py with capture_as('sidebar'): ?>
 <h3>Recent Posts</h3>
 <ul>
 <?py for post in recent_posts: ?>
-  <a href="/blog/#{post['id']}">${post['title']}</a>
+  <a href="/blog/{==post['id']==}">{=post['title']=}</a>
 <?py #endfor ?>
 </ul>
 <?py #endwith ?>
@@ -218,7 +218,7 @@ It is able to capture parital of output. You can use this feature as an alternat
     <?py #endif ?>
     </div>
     <div id="main-content">
-#{_content}
+{==_content==}
     </div>
     <div id="sidebar-part">
     <?py if not captured_as('sidebar'): ?>
@@ -337,7 +337,7 @@ You can cache a certain part of HTML to improve performance. This is called as F
   <?py for _ in cache_as('items/1', 60): ?>
   <ul>
     <?py     for item in get_items(): ?>
-    <li>${item}</li>
+    <li>{=item=}</li>
     <?py     #endfor ?>
   </ul>
   <?py #endfor ?>
@@ -497,7 +497,7 @@ The following is an example to generate M17N pages from a template file.
 ```html
 <div>
 <?PY ## '_()' represents translator method ?>
- <p>${{_('Hello')}} ${username}!</p>
+ <p>${{_('Hello')}} {=username=}!</p>
 </div>
 ```
 

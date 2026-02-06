@@ -18,8 +18,8 @@ print(engine.get_template('page.pyhtml').script)
 
 ```html
 <p>
-  escaped:     ${value}
-  not escaped: #{value}
+  escaped:     {=value=}
+  not escaped: {==value==}
 </p>
 ```
 

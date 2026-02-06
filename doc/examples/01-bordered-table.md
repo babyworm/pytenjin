@@ -5,15 +5,15 @@
 ```html
 <html>
   <body>
-    <h1>${title}</h1>
+    <h1>{=title=}</h1>
     <table>
 <?py i = 0 ?>
 <?py for item in items: ?>
 <?py     i += 1 ?>
 <?py     color = i % 2 == 0 and '#FFCCCC' or '#CCCCFF' ?>
-      <tr bgcolor="#{color}">
-        <td>#{i}</td>
-        <td>${item}</td>
+      <tr bgcolor="{==color==}">
+        <td>{==i==}</td>
+        <td>{=item=}</td>
       </tr>
 <?py #endfor ?>
     </table>

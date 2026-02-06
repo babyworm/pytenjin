@@ -15,7 +15,7 @@ For example, Tenjin provides TrimPreprocessor class which trims spaces in HTML t
 <div>
   <ul>
     <?py for item in items: ?>
-    <li>${item}</li>
+    <li>{=item=}</li>
     <?py #endfor ?>
   </ul>
 </div>
@@ -24,7 +24,7 @@ For example, Tenjin provides TrimPreprocessor class which trims spaces in HTML t
 <div>
 <ul>
 <?py for item in items: ?>
-<li>${item}</li>
+<li>{=item=}</li>
 <?py #endfor ?>
 </ul>
 </div>
@@ -81,7 +81,7 @@ For examle, the follwoing template file:
 <div>
   <ul>
     <?py for item in items: ?>
-    <li>${item}</li>
+    <li>{=item=}</li>
     <?py #endfor ?>
   </ul>
 </div>
@@ -135,7 +135,7 @@ For examle, the follwoing template file:
 <div>
   <ul>
     :: for item in items:
-    <li>${item}</li>
+    <li>{=item=}</li>
     :: #endfor
   </ul>
 </div>
@@ -147,7 +147,7 @@ is converted into:
 <div>
   <ul>
     <?py for item in items: ?>
-    <li>${item}</li>
+    <li>{=item=}</li>
     <?py #endfor ?>
   </ul>
 </div>
@@ -201,15 +201,15 @@ JavaScriptPreprocessor class enables you to embed client-side template code in y
         <tbody>
           <?js for (var i = 0, n = items.length; i < n; i++) { ?>
           <?js     var klass = i % 2 ? 'even' : 'odd'; ?>
-          <tr class="#{klass}">
-            <td>${items[i]}</td>
+          <tr class="{==klass==}">
+            <td>{=items[i]=}</td>
           </tr>
           <?js } ?>
         </tbody>
       </table>
       <!-- #/JS -->
     </div>
-    <script>#{tenjin.JS_FUNC}</script>
+    <script>{==tenjin.JS_FUNC==}</script>
     <script>
 /// example code to render table
 (function() {
@@ -308,7 +308,7 @@ In this moment it is not possible to nest client-side template code.
     <?js for (var i = 0, n = items.length; i < n; i++) { ?>
     <!-- #JS: render_raw(item) -->
     <tr>
-      <td>${item}</td>
+      <td>{=item=}</td>
     </tr>
     <!-- #/JS -->
     <?js } ?>
@@ -338,13 +338,13 @@ Notation of preprocessing with `TemplatePreprocessor` class:
 **`#{{...}}` or `{#==...==#}`**
 : Preprocessing expression (without HTML escape)
 
-The following shows difference between `${...}` and `${{...}}`.
+The following shows difference between `{=...=}` and `${{...}}`.
 
 **views/pp-example1.pyhtml**
 
 ```html
 ## normal expression
-value = ${value}
+value = {=value=}
 ## with preprocessing
 value = ${{value}}
 ```
@@ -393,7 +393,7 @@ You can confirm preprocessed template by '`pytenjin -P`' command.
 ```console
 $ pytenjin -P -c 'value="My Great Example"' views/pp-example1.pyhtml
 ## normal expression
-value = ${value}
+value = {=value=}
 ## with preprocessing
 value = My Great Example
 ```
@@ -403,7 +403,7 @@ If you want to see preprocessing script (not preprocessed script), use '`pytenji
 ```console
 $ pytenjin -sP -c 'value="My Great Example"' views/pp-example1.pyhtml
 _buf = []; _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''## normal expression
-value = ${value}
+value = {=value=}
 ## with preprocessing
 value = ''', _escape(_to_str(_decode_params(value))), '''\n''', ));
 print(''.join(_buf))
@@ -428,7 +428,7 @@ It is possible to evaluate some logics by '`<?PY ... ?>`' when convert template 
 <select name="state">
   <option value="">-</option>
   <?PY for code in codes: ?>
-  <option value="#{{code}}"#{chk.get('#{{code}}', '')}>${{states[code]}}</option>
+  <option value="#{{code}}"{==chk.get('#{{code}}', '')==}>${{states[code]}}</option>
   <?PY #endfor ?>
 </select>
 ```
@@ -442,17 +442,17 @@ $ pytenjin -P views/pp-example2.pyhtml
 <?py chk = { params['state']: ' selected="selected"' } ?>
 <select name="state">
   <option value="">-</option>
-  <option value="CA"#{chk.get('CA', '')}>California</option>
-  <option value="FL"#{chk.get('FL', '')}>Florida</option>
-  <option value="HI"#{chk.get('HI', '')}>Hawaii</option>
-  <option value="NY"#{chk.get('NY', '')}>New York</option>
-  <option value="TX"#{chk.get('TX', '')}>Texas</option>
+  <option value="CA"{==chk.get('CA', '')==}>California</option>
+  <option value="FL"{==chk.get('FL', '')==}>Florida</option>
+  <option value="HI"{==chk.get('HI', '')==}>Hawaii</option>
+  <option value="NY"{==chk.get('NY', '')==}>New York</option>
+  <option value="TX"{==chk.get('TX', '')==}>Texas</option>
 </select>
 ```
 
 ### Parameters
 
-Assume that link_to() is a helper method which takes label and url and generate `<a></a>` tag. In this case, label and url can be parameterized by `_p("...")` and `_P("...")`. The former is converted into #{...} and the latter converted into ${...} by preprocessor.
+Assume that link_to() is a helper method which takes label and url and generate `<a></a>` tag. In this case, label and url can be parameterized by `_p("...")` and `_P("...")`. The former is converted into {==...==} and the latter converted into {=...=} by preprocessor.
 
 **views/pp-example3.pyhtml**
 
@@ -468,13 +468,13 @@ def link_to(label, url):
 #{{link_to('Show '+_P('params["name"]'), '/items/show/'+_p('params["id"]'))}}
 ```
 
-The following shows that `_P('...')` and `_p('...')` are converted into `${...}` and `#{...}` respectively.
+The following shows that `_P('...')` and `_p('...')` are converted into `{=...=}` and `{==...==}` respectively.
 
 **Preprocessed template:**
 
 ```console
 $ pytenjin -P views/pp-example3.pyhtml
-<a href="/items/show/#{params["id"]}">Show ${params["name"]}</a>
+<a href="/items/show/{==params["id"]==}">Show {=params["name"]=}</a>
 ```
 
 There are many web-application framework and they provides helper functions. These helper functions are divided into two groups. link_to() or _() (function for M17N) return the same result when the same arguments are passed. These functions can be expanded by preprocessor. Some functions return the different result even if the same arguments are passed. These functions can't be expaned by preprocessor.

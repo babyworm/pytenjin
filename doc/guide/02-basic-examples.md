@@ -9,17 +9,23 @@ Notation:
 **`<?py ... ?>`**
 : Python statements
 
-**`${...}` or `{=...=}`**
+**`{=...=}` or `${...}`**
 : Python expression (with HTML escape)
 
-**`#{...}` or `{==...==}`**
+**`{==...==}` or `#{...}`**
 : Python expression (without HTML escape)
+
+> **DEPRECATION NOTICE:**
+>
+> The `${...}` and `#{...}` syntax is deprecated and will be removed in a future version. Please use `{=...=}` (escaped) and `{==...==}` (raw) instead.
+>
+> - `${expr}` → `{=expr=}`
+> - `#{expr}` → `{==expr==}`
 
 > **NOTE:**
 >
 > Since version 1.0.0, pyTenjin provides `{=...=}` and `{==...==}` for embedded expression as well as `${...}` and `#{...}`. This is for:
 >
-> - ~~Conveniency: `${_('Hello {}!').format(name)}` is NG (because '}' appears in `${...}`) but `{=_('Hello {}!').format(name)=}` is OK.~~ Since pyTenjin 1.1.0, it is possible to include pair of `{` and `}` inside of `${...}` or `#{...}`.
 > - Security: you may take a mistake to write `#{...}` instead of `${...}` easily because they are similar, but you will not confuse between `{=...=}` and `{==...==}` because the latter is MUCH longer then the former!
 
 > **NOTE:**
@@ -38,14 +44,14 @@ Notation:
 **views/page.pyhtml: html template**
 
 ```html
-<h2>${title}</h2>
+<h2>{=title=}</h2>
 <table>
   <?py i = 0 ?>
   <?py for item in items: ?>
   <?py     i += 1 ?>
   <?py     klass = i % 2 and 'odd' or 'even' ?>
-  <tr class="#{klass}">
-    <td>${item}</td>
+  <tr class="{==klass==}">
+    <td>{=item=}</td>
   </tr>
   <?py #endfor ?>
 </table>
@@ -81,7 +87,7 @@ You can write any Python statements or expression in yor template file, but ther
 ## [NG] there is a comment after ':' and '#endfor'
 <ul>
 <?py if item in items:   ## beginning of loop ?>
-  <li>${item}</li>
+  <li>{=item=}</li>
 <?py #endfor             ## end of loop ?>
 </ul>
 ```
@@ -208,10 +214,10 @@ Layout template will help you to use common HTML design for all pages.
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${title}</title>
+    <title>{=title=}</title>
   </head>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>
 ```
@@ -290,10 +296,10 @@ Using '`_context`' dictionary, you can pass any data from template file to main 
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>
 ```
@@ -302,14 +308,14 @@ Using '`_context`' dictionary, you can pass any data from template file to main 
 
 ```html
 <?py _context['page_title'] = 'Tenjin: Layout Template Example' ?>
-<h2>${title}</h2>
+<h2>{=title=}</h2>
 <table>
 <?py i = 0 ?>
 <?py for item in items: ?>
 <?py     i += 1 ?>
 <?py     klass = i % 2 and 'odd' or 'even' ?>
-  <tr class="#{klass}">
-    <td>${item}</td>
+  <tr class="{==klass==}">
+    <td>{=item=}</td>
   </tr>
 <?py #endfor ?>
 </table>
@@ -352,14 +358,14 @@ For readability, it is recommended to declare context variables in your template
 ```html
 <?py #@ARGS title, items ?>
 <?py _context['page_title'] = 'Tenjin: Layout Template Example' ?>
-<h2>${title}</h2>
+<h2>{=title=}</h2>
 <table>
 <?py i = 0 ?>
 <?py for item in items: ?>
 <?py     i += 1 ?>
 <?py     klass = i % 2 and 'odd' or 'even' ?>
-  <tr class="#{klass}">
-    <td>${item}</td>
+  <tr class="{==klass==}">
+    <td>{=item=}</td>
   </tr>
 <?py #endfor ?>
 </table>
@@ -392,10 +398,10 @@ _extend(('''</table>\n''', ));
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>
 ```
@@ -426,7 +432,7 @@ _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''<!DOCTYPE>
 > ## if username is not specified, use 'World' as default.
 > username = _context.get('username', 'World')
 > ?>
-> <p>Hello ${username}</p>
+> <p>Hello {=username=}</p>
 > ```
 
 ## Include Partial Template
@@ -446,11 +452,11 @@ In the following example, layout template includes header and footer templates i
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
 <?py include('_header.pyhtml', title=page_title) ?>
-#{_content}
+{==_content==}
 <?py include('_footer.pyhtml') ?>
   </body>
 </html>
@@ -461,7 +467,7 @@ In the following example, layout template includes header and footer templates i
 ```html
 <?py #@ARGS title ?>
 <div class="header">
-  <h1>${title}</h1>
+  <h1>{=title=}</h1>
 </div>
 ```
 
@@ -543,11 +549,11 @@ print(html)
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
 <?py include(':_header', title=page_title) ?>
-#{_content}
+{==_content==}
 <?py include(':_footer') ?>
   </body>
 </html>
@@ -706,8 +712,8 @@ Module `tenjin.helpers` provides basic helper functions.
   ```html
   ## add _content into here
   <?py echo(_content) ?>
-  ## this is same as #{...} or {==...==}
-  #{_content}
+  ## this is same as {==...==}
+  {==_content==}
   ```
 
 **new_cycle(\**values*)**

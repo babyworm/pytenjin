@@ -1,6 +1,6 @@
 <?py #@ARGS _content ?>
 <html>
   <body>
-#{_content}
+{==_content==}
   </body>
 </html>

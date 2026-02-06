@@ -5,7 +5,7 @@
   <select name="lang">
 <?py table = { params['lang']: ' selected="selected"' } ?>
 <?PY for val, name in languages: ?>
-    <option value="${{val}}" #{table.get(#{{repr(val)}}, '')}>${{name}}</option>
+    <option value="${{val}}" {==table.get(#{{repr(val)}}, '')==}>${{name}}</option>
 <?PY #endfor ?>
   </select>
   <input type="submit" value="OK" />

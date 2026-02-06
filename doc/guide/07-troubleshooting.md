@@ -10,9 +10,9 @@ File 'syntaxerr.pyhtml':
 <?py #@ARGS ?>
 <?py for i in range(0, 10): ?>
 <?py     if i % 2 == 0: ?>
-#{i} is even.
+{==i==} is even.
 <?py     else ?>
-#{i} is odd.
+{==i==} is odd.
 <?py     #endif ?>
 <?py #endfor ?>
 ```
@@ -81,7 +81,7 @@ def getval(key):
 #end
 
 ?>
-<p>getval('A') = ${getval('A')}</p>
+<p>getval('A') = {=getval('A')=}</p>
 ```
 
 This will raise NameError, such as:
@@ -118,5 +118,5 @@ def getval(key, _values=values):   # works very well!
 #end
 
 ?>
-<p>getval('A') = ${getval('A')}</p>
+<p>getval('A') = {=getval('A')=}</p>
 ```

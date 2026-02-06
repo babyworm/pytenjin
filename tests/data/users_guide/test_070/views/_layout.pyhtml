@@ -3,11 +3,11 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${page_title}</title>
+    <title>{=page_title=}</title>
   </head>
   <body>
 <?py include(':_header', title=page_title) ?>
-#{_content}
+{==_content==}
 <?py include(':_footer') ?>
   </body>
 </html>

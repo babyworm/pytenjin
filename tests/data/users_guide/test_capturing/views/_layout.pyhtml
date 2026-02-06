@@ -6,7 +6,7 @@
     <?py #endif ?>
     </div>
     <div id="main-content">
-#{_content}
+{==_content==}
     </div>
     <div id="sidebar-part">
     <?py if not captured_as('sidebar'): ?>

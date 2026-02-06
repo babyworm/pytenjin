@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###
-### $Release: 1.1.1 $
+### $Release: 1.1.2 $
 ### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
 ###
 

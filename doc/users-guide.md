@@ -1,6 +1,6 @@
 # pyTenjin User's Guide
 
-release: 1.1.1
+release: 1.1.2
 
 > **NOTE:**
 >

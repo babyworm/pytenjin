@@ -1,5 +1,5 @@
 ##
-## $Release: 1.1.1 $
+## $Release: 1.1.2 $
 ## $Copyright: Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com) $
 ## $License: MIT License $
 ##
@@ -13,7 +13,7 @@
    http://www.kuwata-lab.com/tenjin/pytenjin-examples.html
 """
 
-__version__  = "$Release: 1.1.1 $"[10:-2]
+__version__  = "$Release: 1.1.2 $"[10:-2]
 __license__  = "$License: MIT License $"[10:-2]
 __all__      = ('Template', 'Engine', )
 

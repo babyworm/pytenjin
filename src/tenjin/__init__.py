@@ -27,6 +27,6 @@ for _name in dir(_core):
         globals()[_name] = _obj
 del _name, _obj, _types
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __license__ = "MIT License"
 __all__ = ('Template', 'Engine')

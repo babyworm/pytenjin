@@ -1,10 +1,11 @@
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
 
-from oktest import ok, not_ok, run, spec, test
-from oktest.helper import dummy_file
+import pytest
+import re as _re
 import sys, os, re, time, marshal, shutil
 from glob import glob
 try:    import cPickle as pickle
@@ -25,7 +26,7 @@ def _convert_data(data, lang='python'):
         for k in list(data.keys()):
             v = data[k]
             if k[-1] == '*':
-                ok (v).is_a(dict)
+                assert isinstance(v, dict)
                 data[k[:-1]] = v.get(lang)
             if isinstance(v, dict) and lang in v:
                 data[k] = v[lang]
@@ -90,7 +91,7 @@ class DebugLogger(object):
     del f
 
 
-class EngineTest(object):
+class TestEngine:
 
     #code = TestCaseHelper.generate_testcode(__file__)
     #exec(code)
@@ -105,15 +106,15 @@ class EngineTest(object):
     contexts  = data['contexts']
 
 
-    def before(self):
+    def setup_method(self):
         tenjin.Engine.cache.clear()
-    #    testdata = EngineTest._testdata['basic']
+    #    testdata = TestEngine._testdata['basic']
     #    for hash in testdata['templates']:
     #        write_file(hash['filename'], hash['content'])
 
 
-    #def after(self):
-    #    for hash in EngineTest._testdata['basic']['templates']:
+    #def teardown_method(self):
+    #    for hash in TestEngine._testdata['basic']['templates']:
     #        filename = hash['filename']
     #        for fname in [filename, filename+'.cache', filename+'.marshal']:
     #            if os.path.exists(fname):
@@ -128,7 +129,7 @@ class EngineTest(object):
 
     def _test_basic(self):
         try:
-            testdata = EngineTest._testdata['basic']
+            testdata = TestEngine._testdata['basic']
             for hash in testdata['templates']:
                 write_file(hash['filename'], hash['content'])
             #
@@ -139,20 +140,20 @@ class EngineTest(object):
             layoutp  = lst[3] != 'nolayout'  # 'nolayout' or 'withlayout'
             layout   = layoutp and 'user_layout.pyhtml' or None
             engine   = tenjin.Engine(prefix='user_', postfix='.pyhtml', layout=layout)
-            context  = EngineTest.contexts[action].copy()
+            context  = TestEngine.contexts[action].copy()
             key      = 'user_' + action + (layout and '_withlayout' or '_nolayout')
-            expected = EngineTest.expected[key]
+            expected = TestEngine.expected[key]
             filename = 'user_%s.pyhtml' % action
             tplname  = shortp and ':'+action or filename
             if layout:
                 output = engine.render(tplname, context)
             else:
                 output = engine.render(tplname, context, layout=False)
-            ok (output) == expected
+            assert output == expected
         finally:
-            filenames = [ hash['filename'] for hash in EngineTest._testdata['basic']['templates'] ]
+            filenames = [ hash['filename'] for hash in TestEngine._testdata['basic']['templates'] ]
             _remove_files(filenames)
-            #for hash in EngineTest._testdata['basic']['templates']:
+            #for hash in TestEngine._testdata['basic']['templates']:
             #    filename = hash['filename']
             #    for fname in [filename, filename+'.cache', filename+'.marshal']:
             #        if os.path.exists(fname):
@@ -223,7 +224,7 @@ class EngineTest(object):
 
 
     def test_capture_and_echo(self):
-        hash = EngineTest._testdata['test_capture_and_echo']
+        hash = TestEngine._testdata['test_capture_and_echo']
         layout = hash['layout']
         content = hash['content']
         expected = hash['expected']
@@ -235,7 +236,7 @@ class EngineTest(object):
             write_file(content_filename, content)
             engine = tenjin.Engine(prefix='user_', postfix='.pyhtml', layout=':layout')
             output = engine.render(':content', context)
-            ok (output) == expected
+            assert output == expected
         finally:
             _remove_files([layout_filename, content_filename])
 
@@ -272,18 +273,19 @@ class EngineTest(object):
         if sys.version < '2.5':
             contents = (content2, )
         for content in contents:
-            d = dummy_file(filename, content).__enter__()
+            # Replace dummy_file usage with manual file creation/cleanup
+            f = open(filename, 'w'); f.write(content); f.close()
             try:
                 context = {'items': ['A', 'B', 'C']}
                 engine = tenjin.Engine()
                 output = engine.render(filename, context)
-                ok (output) == expected1
-                ok (context['sidemenu']) == expected2
+                assert output == expected1
+                assert context['sidemenu'] == expected2
             finally:
-                d.__exit__(*sys.exc_info())
+                if os.path.exists(filename): os.unlink(filename)
 
     def test_captured_as(self):
-        hash = EngineTest._testdata['test_captured_as']
+        hash = TestEngine._testdata['test_captured_as']
         files = ( ('content.pyhtml',      hash['content']),
                   ('customlayout.pyhtml', hash['customlayout']),
                   ('baselayout.pyhtml',   hash['baselayout']),
@@ -295,13 +297,13 @@ class EngineTest(object):
                 write_file(filename, content)
             engine = tenjin.Engine(postfix='.pyhtml')
             output = engine.render(':content', context)
-            ok (output) == expected
+            assert output == expected
         finally:
             _remove_files([ t[0] for t in files ])
 
 
     def test_local_layout(self):
-        hash = EngineTest._testdata['test_local_layout']
+        hash = TestEngine._testdata['test_local_layout']
         context = hash['context']
         names = ['layout_html', 'layout_xhtml', 'content_html']
         def fname(base):
@@ -317,7 +319,7 @@ class EngineTest(object):
                 content_html = hash['content_html'] + statement
                 write_file(fname('content_html'), content_html)
                 actual = engine.render(':content_html', context)
-                ok (actual) == expected
+                assert actual == expected
             ##
             _test(hash['expected_html'], '')
             time.sleep(1)
@@ -336,7 +338,7 @@ class EngineTest(object):
 
 
     def test_cachefile(self):
-        data = EngineTest._testdata['test_cachefile']
+        data = TestEngine._testdata['test_cachefile']
         filenames = { 'layout': 'layout.pyhtml',
                       'page': 'account_create.pyhtml',
                       'form': 'account_form.pyhtml',
@@ -352,51 +354,51 @@ class EngineTest(object):
             props['cache'] = False
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
-            ok (output) == expected
-            for fname in cache_filenames: not_ok (fname).exists()
+            assert output == expected
+            for fname in cache_filenames: assert not os.path.exists(fname)
             ## marshal caching
             if not JYTHON:
                 props['cache'] = tenjin.MarshalCacheStorage()
                 engine = tenjin.Engine(**props)
                 output = engine.render(':create', context)
-                ok (output) == expected
+                assert output == expected
                 if   python2:  nullbyte = '\0'
                 elif python3:  nullbyte = '\0'.encode('ascii')
                 for fname in cache_filenames:
-                    ok (fname).exists()               # file created?
+                    assert os.path.exists(fname)               # file created?
                     s = read_file(fname, 'rb')        # read binary file
-                    ok (s.find(nullbyte)) >= 0        # binary file?
+                    assert s.find(nullbyte) >= 0        # binary file?
                     f = open(fname, 'rb')
                     fn = lambda: marshal.load(f)
                     try:
-                        ok (fn).not_raise()           # marshal?
+                        fn()           # marshal?
                     finally:
                         f.close()
                 engine = tenjin.Engine(**props)
                 output = engine.render(':create', context)
-                ok (output) == expected               # reloadable?
+                assert output == expected               # reloadable?
             #
             for fname in glob('*.pyhtml.cache'): os.unlink(fname)
             for fname in cache_filenames:
-                not_ok (fname).exists()
+                assert not os.path.exists(fname)
             ## pickle caching
             props['cache'] = tenjin.PickleCacheStorage()
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
-            ok (output) == expected
+            assert output == expected
             if   python2:  nullbyte = '\0'
             elif python3:  nullbyte = '\0'.encode('ascii')
             for fname in cache_filenames:
-                ok (fname).exists()                         # file created?
+                assert os.path.exists(fname)                         # file created?
                 s = read_file(fname, 'rb')                       # read text file
                 if python2:
-                    ok (s.find(nullbyte)) < 0        # text file? (pickle protocol ver 2)
+                    assert s.find(nullbyte) < 0        # text file? (pickle protocol ver 2)
                 elif python3:
-                    ok (s.find(nullbyte)) >= 0       # binary file? (pickle protocol ver 3)
+                    assert s.find(nullbyte) >= 0       # binary file? (pickle protocol ver 3)
                 f = open(fname, 'rb')
-                fn = lambda: Pickle.load(f)
+                fn = lambda: pickle.load(f)
                 try:
-                    ok (fn).not_raise(ValueError)
+                    fn()
                 finally:
                     f.close()
                 f = open(fname, 'rb')
@@ -404,22 +406,22 @@ class EngineTest(object):
                 f.close()
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
-            ok (output) == expected               # reloadable?
+            assert output == expected               # reloadable?
             #
             for fname in glob('*.cache'): os.unlink(fname)
             for fname in cache_filenames:
-                not_ok (fname).exists()
+                assert not os.path.exists(fname)
             ## text caching
             props['cache'] = tenjin.TextCacheStorage()
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
-            ok (output) == expected
+            assert output == expected
             if   python2:  nullchar = '\0'
             elif python3:  nullchar = '\0'
             for fname in cache_filenames:
-                ok (fname).exists()                  # file created?
+                assert os.path.exists(fname)                  # file created?
                 s = read_file(fname, 'r')            # read text file
-                ok (s.find(nullchar)) < 0            # text file?
+                assert s.find(nullchar) < 0            # text file?
                 if JYTHON:
                     continue
                 #fn = lambda: marshal.loads(s)
@@ -427,26 +429,27 @@ class EngineTest(object):
                 fn = lambda: marshal.load(f)
                 try:
                   if python3:
-                    ok (fn).raises((ValueError, EOFError))        # non-marshal?
+                    with pytest.raises((ValueError, EOFError)) as exc_info: fn()        # non-marshal?
+                    ex = exc_info.value
                     if sys.version_info[1] == 0:     # python 3.0
-                        ok (str(fn.exception)) == "bad marshal data"
+                        assert str(ex) == "bad marshal data"
                     else:                            # python 3.1 or later
-                        if isinstance(fn.exception, ValueError):
-                            ok (str(fn.exception)) == "bad marshal data (unknown type code)"
+                        if isinstance(ex, ValueError):
+                            assert str(ex) == "bad marshal data (unknown type code)"
                         # EOFError for Python 3.12+ is also acceptable
                   elif python2 and sys.version_info[1] >= 5:
-                    ok (fn).raises(EOFError, "EOF read where object expected")  # non-marshal?
+                    with pytest.raises(EOFError, match=_re.escape("EOF read where object expected")): fn()  # non-marshal?
                 finally:
                     f.close()
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
-            ok (output) == expected                  # reloadable?
+            assert output == expected                  # reloadable?
         finally:
             _remove_files(filenames.values())
 
     def test_cachefile_timestamp(self):
         """engine should clear cache not only template is newer but also template is older than cache."""
-        data = EngineTest._testdata['test_cachefile']
+        data = TestEngine._testdata['test_cachefile']
         filenames = { 'layout': 'layout.pyhtml',
                       'page': 'account_create.pyhtml',
                       'form': 'account_form.pyhtml',
@@ -466,16 +469,16 @@ class EngineTest(object):
             engine = tenjin.Engine(**props)
             output = engine.render(':create', context)
             for fname in filenames.values():
-                ok (fname).exists()                         # file created?
-                ok (engine.get_template(fname).timestamp) < curr_time
-                ok (engine.get_template(fname).timestamp) == os.path.getmtime(fname)
+                assert os.path.exists(fname)                         # file created?
+                assert engine.get_template(fname).timestamp < curr_time
+                assert engine.get_template(fname).timestamp == os.path.getmtime(fname)
             ## save current cached object
             cached = {}
             for fname in filenames.values():
                 cached[fname] = engine.get_template(fname)
             ## confirm that get_template() returns the same object
             for fname in filenames.values():
-                ok (cached[fname]).is_(engine.get_template(fname))
+                assert cached[fname] is engine.get_template(fname)
             ## change timestamp of templates to be old
             for fname in filenames.values():
                 atime = mtime = os.path.getmtime(fname) - 10
@@ -483,8 +486,8 @@ class EngineTest(object):
             ## check whether new caches are created
             for fname in filenames.values():
                 t = engine.get_template(fname)
-                not_ok (cached[fname]).is_(t)
-                ok (t.timestamp) == os.path.getmtime(fname)
+                assert cached[fname] is not t
+                assert t.timestamp == os.path.getmtime(fname)
         finally:
             tenjin.Engine.timestamp_interval = interval
             _remove_files(filenames.values())
@@ -500,20 +503,20 @@ class EngineTest(object):
             engine.render(template_name)
             fullpath = os.path.abspath(template_name)
             cachepath = engine.cachename(fullpath)
-            ok (storage.items).contains(cachepath)
-            ok (template_name + '.cache').exists()
+            assert cachepath in storage.items
+            assert os.path.exists(template_name + '.cache')
             storage.unset(cachepath)
-            not_ok (storage.items).contains(cachepath)
-            not_ok (template_name + '.cache').exists()
+            assert cachepath not in storage.items
+            assert not os.path.exists(template_name + '.cache')
             def f():
                 storage.unset(fullpath)
-            ok (f).not_raise()
+            f()
         finally:
             _remove_files([template_name, template_name+'.cache'])
 
 
     def test_change_layout(self):
-        data = EngineTest._testdata['test_change_layout']
+        data = TestEngine._testdata['test_change_layout']
         ## setup
         tenjin.Engine.cache.clear()
         basenames = ['baselayout', 'customlayout', 'content']
@@ -524,14 +527,14 @@ class EngineTest(object):
             engine = tenjin.Engine(layout='baselayout.pyhtml')
             output = engine.render('content.pyhtml')
             expected = data['expected']
-            ok (output) == expected
+            assert output == expected
         ## teardown
         finally:
             _remove_files(basenames)
 
 
     def test_context_scope(self):
-        data = EngineTest._testdata['test_context_scope']
+        data = TestEngine._testdata['test_context_scope']
         base = data['base']
         part = data['part']
         expected = data['expected']
@@ -543,13 +546,13 @@ class EngineTest(object):
             context = {}
             output = engine.render('base.pyhtml', context)
             expected = data['expected']
-            ok (output) == expected
+            assert output == expected
         finally:
             _remove_files(['base', 'part'])
 
 
     def test_template_args(self):
-        data = EngineTest._testdata['test_template_args']
+        data = TestEngine._testdata['test_template_args']
         content = data['content']
         expected = data['expected']
         context = data['context']
@@ -559,74 +562,76 @@ class EngineTest(object):
         try:
             def f1():
                 engine = tenjin.Engine(cache=True)
-                ok (engine.get_template('content.pyhtml').args) != None
+                assert engine.get_template('content.pyhtml').args != None
                 output = engine.render('content.pyhtml', context)
-            ok (f1).raises(NameError); ex = f1.exception
+            with pytest.raises(NameError) as exc_info: f1()
+            ex = exc_info.value
             #import sys; sys.stderr.write("*** debug: ex=%s\n" % (repr(ex)))
             #engine = tenjin.Engine(cache=True)
-            #ok (engine.get_template('content.pyhtml').args) != None
+            #assert engine.get_template('content.pyhtml').args != None
             #output = engine.render('content.pyhtml', context)
-            #ok (output) == expected
-            ok (f1).raises(NameError); ex = f1.exception
+            #assert output == expected
+            with pytest.raises(NameError) as exc_info: f1()
+            ex = exc_info.value
         finally:
             _remove_files(['content'])
 
 
     def test__set_cache_storage(self):
         if "default then Engine.cache is TextCacheStorage instance":
-            ok (tenjin.Engine.cache).is_a(tenjin.TextCacheStorage)
+            assert isinstance(tenjin.Engine.cache, tenjin.TextCacheStorage)
         if "cache=True specified then use default cache object":
             engine = tenjin.Engine(cache=True)
-            ok ('cache' in engine.__dict__) == False
-            ok (engine.cache).is_(tenjin.Engine.cache)
-            ok (engine.cache).is_(tenjin.Engine(cache=True).cache)
+            assert ('cache' in engine.__dict__) == False
+            assert engine.cache is tenjin.Engine.cache
+            assert engine.cache is tenjin.Engine(cache=True).cache
         if "cache=True and default cache is not set then create MarshalCacheStorage object for each engine":
             bkup = tenjin.Engine.cache
             try:
                 tenjin.Engine.cache = None
                 engine = tenjin.Engine(cache=True)
-                ok (engine.__dict__).contains('cache')
-                ok (engine.cache).is_a(tenjin.MarshalCacheStorage)
-                not_ok (engine.cache).is_(tenjin.Engine(cache=True).cache)
+                assert 'cache' in engine.__dict__
+                assert isinstance(engine.cache, tenjin.MarshalCacheStorage)
+                assert engine.cache is not tenjin.Engine(cache=True).cache
             finally:
                 tenjin.Engine.cache = bkup
         #if "cache=None specified then set MemoryCacheObject instance as cache object":
         #    engine = tenjin.Engine(cache=None)
-        #    ok ('cache' in engine.__dict__) == True
-        #    ok (engine.cache).is_a(tenjin.MemoryCacheStorage)
+        #    assert ('cache' in engine.__dict__) == True
+        #    assert isinstance(engine.cache, tenjin.MemoryCacheStorage)
         if "cache=None then do nothing":
             engine = tenjin.Engine(cache=None)
-            not_ok (engine.__dict__).contains('cache')
+            assert 'cache' not in engine.__dict__
         if "cache=False specified then don't use cache object":
             engine = tenjin.Engine(cache=False)
-            ok (engine.__dict__).contains('cache')
-            ok (engine.cache) == None
+            assert 'cache' in engine.__dict__
+            assert engine.cache == None
         if "CacheStorage instance is specified then use it as cache object":
             cache_storage = tenjin.MarshalCacheStorage()
             engine = tenjin.Engine(cache=cache_storage)
-            ok (engine.__dict__).contains('cache')
-            ok (engine.cache).is_(cache_storage)
+            assert 'cache' in engine.__dict__
+            assert engine.cache is cache_storage
         if "invalid object is specified as cache object then raise ValueError":
             def f():
                 tenjin.Engine(cache=123)
-            ok (f).raises(ValueError, '123: invalid cache object.')
+            with pytest.raises(ValueError, match=_re.escape('123: invalid cache object.')): f()
 
 
     def test_cached_contents(self):
-        data = EngineTest._testdata['test_cached_contents']
+        data = TestEngine._testdata['test_cached_contents']
         def _test(filename, cachename, cachemode, input, expected_script, expected_args):
             if input:
                 write_file(filename, input)
             engine = tenjin.Engine(cache=cachemode)
             t = engine.get_template(filename)
-            ok (t.args) == expected_args
-            ok (t.script) == expected_script
+            assert t.args == expected_args
+            assert t.script == expected_script
             #import marshal
             #f = open(filename + '.cache', 'rb')
             #try:
             #    dct = marshal.load(f)
-            #    ok (dct['args']) == expected_args
-            #    ok (dct['script']) == expected_script
+            #    assert dct['args'] == expected_args
+            #    assert dct['script'] == expected_script
             #finally:
             #    f.close()
         ##
@@ -638,9 +643,9 @@ class EngineTest(object):
             args  = data['args1']
             input = data['input1']
             cachename = filename+'.cache'
-            not_ok (cachename).exists()
+            assert not os.path.exists(cachename)
             _test(filename, cachename, True, input, script, args)
-            ok (cachename).exists()
+            assert os.path.exists(cachename)
             _test(filename, cachename, True, None, script, args)
             ## args=[], cache=1
             cachename = filename+'.cache'
@@ -648,16 +653,16 @@ class EngineTest(object):
             script = data['script2']  # re.sub(r'#@ARGS.*?\n', '#@ARGS \n', cache)
             args  = data['args2']   # []
             time.sleep(1)
-            #ok (cachename).exists()
+            #assert os.path.exists(cachename)
             _test(filename, cachename, True, input, script, args)
-            #ok (cachename).exists()
+            #assert os.path.exists(cachename)
             _test(filename, cachename, True, None, script, args)
         finally:
             _remove_files(['input.pyhtml'])
 
 
     def _test_template_path(self, keys):
-        data = EngineTest._testdata['test_template_path']
+        data = TestEngine._testdata['test_template_path']
         basedir = 'test_templates'
         try:
             os.mkdir(basedir)
@@ -677,7 +682,7 @@ class EngineTest(object):
             output = engine.render(':body', context)
             #
             expected = data['expected_' + '_'.join(keys)]
-            ok (output) == expected
+            assert output == expected
         finally:
             #os.removedirs(basedir)
             #pass
@@ -706,7 +711,7 @@ class EngineTest(object):
 
 
     def test_preprocessor(self):
-        data = EngineTest._testdata['test_preprocessor']
+        data = TestEngine._testdata['test_preprocessor']
         try:
             basenames = ('form', 'create', 'update', 'layout', )
             filenames = []
@@ -722,12 +727,12 @@ class EngineTest(object):
                 'params': { 'state': 'NY' },
             }
             actual = engine.render(':create', context)  # 1st
-            ok (actual) == data['expected1']
+            assert actual == data['expected1']
             context['params'] = {'state': 'xx'}
             actual = engine.render(':create', context)  # 2nd
-            #ok (actual) == data['expected1']
+            #assert actual == data['expected1']
             expected = data['expected1'].replace(r' checked="checked"', '')
-            ok (actual) == expected
+            assert actual == expected
             #
             context = {
                 'title': 'Update',
@@ -735,27 +740,27 @@ class EngineTest(object):
                 'params': { 'state': 'NY' },
             }
             actual = engine.render(':update', context)  # 1st
-            ok (actual) == data['expected2']
+            assert actual == data['expected2']
             context['params'] = { 'state': 'xx' }
             actual = engine.render(':update', context)  # 2nd
-            ok (actual) == data['expected2'] # not changed!
+            assert actual == data['expected2'] # not changed!
             #
-            ok (engine.get_template(':form').script) == data['cache1']
-            ok (engine.get_template(':create').script) == data['cache2']
-            ok (engine.get_template(':layout').script) == data['cache3']
-            ok (engine.get_template(':update').script) == data['cache4']
+            assert engine.get_template(':form').script == data['cache1']
+            assert engine.get_template(':create').script == data['cache2']
+            assert engine.get_template(':layout').script == data['cache3']
+            assert engine.get_template(':update').script == data['cache4']
             #
         finally:
             _remove_files(filenames)
 
     @_with_dummy_files
     def test_pp(self):
-        if spec("'pp' paramater should be a list of preprocessor objects."):
-            pp1 = tenjin.TemplatePreprocessor()
-            pp2 = tenjin.TrimPreprocessor()
-            pp3 = tenjin.JavaScriptPreprocessor(type="text/javascript")
-            e = tenjin.Engine(pp=[pp1, pp2, pp3])
-            input = r"""
+        # 'pp' paramater should be a list of preprocessor objects.
+        pp1 = tenjin.TemplatePreprocessor()
+        pp2 = tenjin.TrimPreprocessor()
+        pp3 = tenjin.JavaScriptPreprocessor(type="text/javascript")
+        e = tenjin.Engine(pp=[pp1, pp2, pp3])
+        input = r"""
 <body>
   <div>
     <!-- #JS: render_items(items) -->
@@ -769,7 +774,7 @@ class EngineTest(object):
   <script>#{{tenjin.JS_FUNC}}</script>
 </body>
 """[1:]
-            expected = r"""
+        expected = r"""
 <body>
 <div>
 <script type="text/javascript">function render_items(items){var _buf='';
@@ -786,31 +791,31 @@ var _ET={'&':"&amp;",'<':"&lt;",'>':"&gt;",'"':"&quot;","'":"&#039;"};
 function _EF(c){return _ET[c];};</script>
 </body>
 """[1:]
-            fname = 'tmp_123.pyhtml'
-            f = open(fname, 'w'); f.write(input); f.close()
-            try:
-                t = e.get_template(fname)
-                context = {}
-                output = e.render(fname, context)
-                ok (output) == expected
-            finally:
-                for x in glob(fname + '*'): os.unlink(x)
+        fname = 'tmp_123.pyhtml'
+        f = open(fname, 'w'); f.write(input); f.close()
+        try:
+            t = e.get_template(fname)
+            context = {}
+            output = e.render(fname, context)
+            assert output == expected
+        finally:
+            for x in glob(fname + '*'): os.unlink(x)
 
-    @test("#__init__(): creates TemplatePreprocessor object when 'preprocess' option is on.")
-    def _(self):
+    def test_init_creates_templatepreprocessor_object_when_preprocess_option_is_on(self):
+        # #__init__(): creates TemplatePreprocessor object when 'preprocess' option is on.
         e = tenjin.Engine(preprocess=True)
-        ok (e.pp).is_a(list).length(1)
-        ok (e.pp[0]).is_a(tenjin.TemplatePreprocessor)
+        assert isinstance(e.pp, list); assert len(e.pp) == 1
+        assert isinstance(e.pp[0], tenjin.TemplatePreprocessor)
 
-    @test("#__init__(): creates TemplatePreprocessor object with 'preprocessorclass' class.")
-    def _(self):
+    def test_init_creates_templatepreprocessor_object_with_preprocessorclass_class(self):
+        # #__init__(): creates TemplatePreprocessor object with 'preprocessorclass' class.
         e = tenjin.Engine(preprocess=True)
-        ok (e.pp[0].factory) == tenjin.Preprocessor
+        assert e.pp[0].factory == tenjin.Preprocessor
         e = tenjin.Engine(preprocess=True, preprocessorclass=tenjin.SafePreprocessor)
-        ok (e.pp[0].factory) == tenjin.SafePreprocessor
+        assert e.pp[0].factory == tenjin.SafePreprocessor
 
     def test_include_with_kwargs(self):
-        data = EngineTest._testdata['test_include_with_kwargs']
+        data = TestEngine._testdata['test_include_with_kwargs']
         write_file('index.pyhtml', data['index_html'])
         write_file('sub.pyhtml', data['sub_html'])
         expected = data['expected']
@@ -819,7 +824,7 @@ function _EF(c){return _ET[c];};</script>
             engine = tenjin.Engine()
             context = {}
             output = engine.render('index.pyhtml', context)
-            ok (output) == expected
+            assert output == expected
         finally:
             _remove_files(['index', 'sub'])
 
@@ -830,11 +835,11 @@ function _EF(c){return _ET[c];};</script>
             template = tenjin.Template('foo.pyhtml', input=input)
             engine = tenjin.Engine(postfix='.pyhtml')
             engine.add_template(template)
-            ok (engine.get_template('foo.pyhtml')) == template
-            ok (engine.get_template(':foo')) == template
+            assert engine.get_template('foo.pyhtml') == template
+            assert engine.get_template(':foo') == template
         if "template is added then it should not create cache file":
-            ok (engine.render(':foo', {'val': 'ABC'})) == 'val=ABC'
-            not_ok ('foo.pyhtml').exists()
+            assert engine.render(':foo', {'val': 'ABC'}) == 'val=ABC'
+            assert not os.path.exists('foo.pyhtml')
 
 
     #def test_prefer_fullpath(self):
@@ -850,20 +855,20 @@ function _EF(c){return _ET[c];};</script>
     #        engine = tenjin.Engine()
     #        engine.cache.clear()
     #        t = engine.get_template(fname)
-    #        ok (t.filename) == expected
+    #        assert t.filename == expected
     #        ex = error_file = None
     #        try:
     #            engine.render(fname, context)
     #        except:
     #            ex = sys.exc_info()[1]
     #            error_file = _filename_on_where_error_raised()
-    #        ok (ex) != None
-    #        ok (error_file) == expected
+    #        assert ex != None
+    #        assert error_file == expected
     #        # read from cache
     #        engine.cache.clear()
     #        engine = tenjin.Engine()
     #        t = engine.get_template(fname)
-    #        ok (t.filename) == expected
+    #        assert t.filename == expected
     #    def _filename_on_where_error_raised():
     #        import traceback
     #        tb = sys.exc_info()[2]
@@ -891,78 +896,78 @@ function _EF(c){return _ET[c];};</script>
 
     def test_cachename(self):
         engine = tenjin.Engine()
-        if spec("return cache file path"):
-            ok (engine.cachename('foo.pyhtml')) == 'foo.pyhtml.cache'
+        # return cache file path
+        assert engine.cachename('foo.pyhtml') == 'foo.pyhtml.cache'
 
     def test_to_filename(self):
         engine = tenjin.Engine(prefix='user_', postfix='.pyhtml')
-        if spec("if template_name starts with ':', add prefix and postfix to it."):
-            ok (engine.to_filename(':list')) == 'user_list.pyhtml'
-        if spec("if template_name doesn't start with ':', just return it."):
-            ok (engine.to_filename('list')) == 'list'
+        # if template_name starts with ':', add prefix and postfix to it.
+        assert engine.to_filename(':list') == 'user_list.pyhtml'
+        # if template_name doesn't start with ':', just return it.
+        assert engine.to_filename('list') == 'list'
 
     @_with_dummy_files
     def test__create_template(self):
         e1 = tenjin.Engine(path=['_views/blog', '_views'])
         t = None
-        if spec("if input is not specified then just create empty template object."):
-            t = e1._create_template(None)
-            ok (t).is_a(tenjin.Template)
-            ok (t.filename) == None
-            ok (t.script) == None
-        if spec("if input is specified then create template object and return it."):
-            t = e1._create_template('<p>#{_content}</p>', '_views/layout.pyhtml')
-            ok (t).is_a(tenjin.Template)
-            ok (t.filename) == "_views/layout.pyhtml"
-            ok (t.script) == lvars + "_extend(('''<p>''', _to_str(_content), '''</p>''', ));"
+        # if input is not specified then just create empty template object.
+        t = e1._create_template(None)
+        assert isinstance(t, tenjin.Template)
+        assert t.filename == None
+        assert t.script == None
+        # if input is specified then create template object and return it.
+        t = e1._create_template('<p>#{_content}</p>', '_views/layout.pyhtml')
+        assert isinstance(t, tenjin.Template)
+        assert t.filename == "_views/layout.pyhtml"
+        assert t.script == lvars + "_extend(('''<p>''', _to_str(_content), '''</p>''', ));"
 
     @_with_dummy_files
     def test__preprocess(self):
         e1 = tenjin.Engine(preprocess=True)
-        if spec("preprocess template and return result"):
-            fpath = '_views/index.pyhtml'
-            input, mtime = e1.loader.load(fpath)
-            ret = e1._preprocess(input, fpath, {}, globals())
-            ok (ret) == "<<SOS>>"
+        # preprocess template and return result
+        fpath = '_views/index.pyhtml'
+        input, mtime = e1.loader.load(fpath)
+        ret = e1._preprocess(input, fpath, {}, globals())
+        assert ret == "<<SOS>>"
 
     @_with_dummy_files
     def test__get_template_from_cache(self):
         e1 = tenjin.Engine(path=['_views/blog', '_views'], postfix='.pyhtml')
         fpath = '_views/blog/index.pyhtml'
         cpath = fpath + '.cache'
-        if spec("if template not found in cache, return None"):
-            ret = e1._get_template_from_cache(cpath, fpath)
-            ok (ret) == None
+        # if template not found in cache, return None
+        ret = e1._get_template_from_cache(cpath, fpath)
+        assert ret == None
         t = tenjin.Template(fpath)
         e1.cache.set(fpath + '.cache', t)
-        if spec("if checked within a sec, skip timestamp check."):
-            #try:
-            #    t.timestamp = time.time() - 0.2
-            #    #import pdb; pdb.set_trace()
-            #    tenjin.logger = DebugLogger()
-            #    ret = e1._get_template_from_cache(cpath, fpath)
-            #    msg = tenjin.logger.messages[0]
-            #    ok (msg.startswith("[TRACE] [tenjin.Engine] timestamp check skipped (")) == True
-            #finally:
-            #    tenjin.logger = None
-            pass
-        if spec("if timestamp of template objectis same as file, return it."):
-            t._last_checked_at = None
-            t.timestamp = os.path.getmtime(fpath)
-            ok (e1._get_template_from_cache(cpath, fpath)).is_(t)
-            delta = JYTHON and 0.03 or 0.001
-            ok (t._last_checked_at).in_delta(time.time(), delta)
-        if spec("if timestamp of template object is different from file, clear it"):
-            t.timestamp = t.timestamp + 1
-            t._last_checked_at = None
-            try:
-                #import pdb; pdb.set_trace()
-                tenjin.logger = DebugLogger()
-                ret = e1._get_template_from_cache(cpath, fpath)
-                msg = tenjin.logger.messages[0]
-                ok (msg) == "[INFO] [tenjin.Engine] cache expired (filepath='_views/blog/index.pyhtml')"
-            finally:
-                tenjin.logger = None
+        # if checked within a sec, skip timestamp check.
+        #try:
+        #    t.timestamp = time.time() - 0.2
+        #    #import pdb; pdb.set_trace()
+        #    tenjin.logger = DebugLogger()
+        #    ret = e1._get_template_from_cache(cpath, fpath)
+        #    msg = tenjin.logger.messages[0]
+        #    assert msg.startswith("[TRACE] [tenjin.Engine] timestamp check skipped (") == True
+        #finally:
+        #    tenjin.logger = None
+        pass
+        # if timestamp of template objectis same as file, return it.
+        t._last_checked_at = None
+        t.timestamp = os.path.getmtime(fpath)
+        assert e1._get_template_from_cache(cpath, fpath) is t
+        delta = JYTHON and 0.03 or 0.001
+        assert abs(t._last_checked_at - time.time()) <= delta
+        # if timestamp of template object is different from file, clear it
+        t.timestamp = t.timestamp + 1
+        t._last_checked_at = None
+        try:
+            #import pdb; pdb.set_trace()
+            tenjin.logger = DebugLogger()
+            ret = e1._get_template_from_cache(cpath, fpath)
+            msg = tenjin.logger.messages[0]
+            assert msg == "[INFO] [tenjin.Engine] cache expired (filepath='_views/blog/index.pyhtml')"
+        finally:
+            tenjin.logger = None
 
     @_with_dummy_files
     def test_get_template(self):
@@ -972,91 +977,87 @@ function _EF(c){return _ET[c];};</script>
         cachepath = fullpath + '.cache'
         assert not os.path.exists(cachepath)
         t = None
-        if spec("return template object.") and \
-           spec("accept template_name such as ':index'."):
-            t = e1.get_template(':index')
-            ok (t).is_a(tenjin.Template)
-            ok (t.filename) == filepath
-        if spec("if template object is added by add_template(), return it."):
-            tmp = tenjin.Template('foo.pyhtml', input="<<dummy>>")
-            e1.add_template(tmp)
-            ok (e1.get_template('foo.pyhtml')).is_(tmp)
-        if spec("get filepath and fullpath of template"):
-            e1._filepaths['index.pyhtml'] == (filepath, fullpath)
-        if spec("if template file is not found then raise TemplateNotFoundError"):
-            def f(): e1.get_template('index')
-            ok (f).raises(tenjin.TemplateNotFoundError, "index: filename not found (path=['_views/blog', '_views']).")
-        if spec("use full path as base of cache file path") and \
-           spec("get template object from cache"):
-            ok (list(e1.cache.items.keys())) == ["%s/_views/blog/index.pyhtml.cache" % os.getcwd()]
-        if spec("change template filename according to prefer_fullpath"):
-            pass
-        if spec("use full path as base of cache file path"):
-            pass
-        if spec("get template object from cache"):
-            pass
-        if spec("if template object is not found in cache or is expired..."):
-            e1.cache.clear()
-            ok (len(e1.cache.items)) == 0
-            tname = ':layout'
-            fpath = '_views/layout.pyhtml'
-            cpath = os.path.join(os.getcwd(), '_views/layout.pyhtml.cache')
-            not_ok (cpath).exists()
-            if spec("create template object."):
-                t = e1.get_template(tname)
-                ok (t).is_a(tenjin.Template)
-            if spec("set timestamp and filename of template object."):
-                ok (t.timestamp) == os.path.getmtime(filepath)
-                ok (t.filename) == fpath
-                delta = JYTHON and 0.03 or 0.003
-                ok (t._last_checked_at).in_delta(time.time(), delta)
-            if spec("save template object into cache."):
-                ok (cpath).exists()
-                ok (len(e1.cache.items)) == 1
-                ok (e1.cache.items).contains(cpath)
+        # return template object.
+        # accept template_name such as ':index'.
+        t = e1.get_template(':index')
+        assert isinstance(t, tenjin.Template)
+        assert t.filename == filepath
+        # if template object is added by add_template(), return it.
+        tmp = tenjin.Template('foo.pyhtml', input="<<dummy>>")
+        e1.add_template(tmp)
+        assert e1.get_template('foo.pyhtml') is tmp
+        # get filepath and fullpath of template
+        e1._filepaths['index.pyhtml'] == (filepath, fullpath)
+        # if template file is not found then raise TemplateNotFoundError
+        def f(): e1.get_template('index')
+        with pytest.raises(tenjin.TemplateNotFoundError, match=_re.escape("index: filename not found (path=['_views/blog', '_views']).")): f()
+        # use full path as base of cache file path
+        # get template object from cache
+        assert list(e1.cache.items.keys()) == ["%s/_views/blog/index.pyhtml.cache" % os.getcwd()]
+        # change template filename according to prefer_fullpath
+        pass
+        # use full path as base of cache file path
+        pass
+        # get template object from cache
+        pass
+        # if template object is not found in cache or is expired...
+        e1.cache.clear()
+        assert len(e1.cache.items) == 0
+        tname = ':layout'
+        fpath = '_views/layout.pyhtml'
+        cpath = os.path.join(os.getcwd(), '_views/layout.pyhtml.cache')
+        assert not os.path.exists(cpath)
+        # create template object.
+        t = e1.get_template(tname)
+        assert isinstance(t, tenjin.Template)
+        # set timestamp and filename of template object.
+        assert t.timestamp == os.path.getmtime(filepath)
+        assert t.filename == fpath
+        delta = JYTHON and 0.03 or 0.003
+        assert abs(t._last_checked_at - time.time()) <= delta
+        # save template object into cache.
+        assert os.path.exists(cpath)
+        assert len(e1.cache.items) == 1
+        assert cpath in e1.cache.items
 
     def test_include(self):
-        if spec("get local and global vars of caller."):
-            pass
-        if spec("get _context from caller's local vars."):
-            pass
-        if spec("if kwargs specified then add them into context."):
-            pass
-        if spec("get template object with context data and global vars."):
-            pass
-        if spec("if append_to_buf is true then add output to _buf."):
-            pass
-        if spec("if append_to_buf is false then don't add output to _buf."):
-            pass
-        if spec("render template and return output."):
-            pass
-        if spec("kwargs are removed from context data."):
-            pass
+        # get local and global vars of caller.
+        pass
+        # get _context from caller's local vars.
+        pass
+        # if kwargs specified then add them into context.
+        pass
+        # get template object with context data and global vars.
+        pass
+        # if append_to_buf is true then add output to _buf.
+        pass
+        # if append_to_buf is false then don't add output to _buf.
+        pass
+        # render template and return output.
+        pass
+        # kwargs are removed from context data.
+        pass
 
     def test_hook_context(self):
         e = tenjin.Engine()
         ctx = {}
         e.hook_context(ctx)
-        if spec("add engine itself into context data."):
-            ok (ctx.get('_engine')).is_(e)
-        if spec("add include() method into context data."):
-            ok (ctx.get('include')) == (e.include)
+        # add engine itself into context data.
+        assert ctx.get('_engine') is e
+        # add include() method into context data.
+        assert ctx.get('include') == (e.include)
 
-    @test("get_template(): ignores syntax error when compiling.")
-    def _(self):
+    def test_get_template_ignores_syntax_error_when_compiling(self):
+        # get_template(): ignores syntax error when compiling.
         input = """<p>${{foo}</p>"""
         fname = "tmp_999.pyhtml"
         f = open(fname, 'w'); f.write(input); f.close()
         try:
             e = tenjin.Engine()
             def fn(): e.get_template(fname)
-            ok (fn).not_raise(SyntaxError)
+            fn()
         finally:
             for x in glob(fname + '*'): os.unlink(x)
 
 
 _DUMMY_VALUE = 'SOS'
-
-
-if __name__ == '__main__':
-    run(EngineTest)

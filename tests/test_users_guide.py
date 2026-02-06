@@ -5,31 +5,26 @@
 
 import sys, os, re
 from glob import glob
-from oktest import ok, run
+import pytest
 
-python3 = sys.version_info[0] == 3
 PYPY    = hasattr(sys, 'pypy_version_info')
-JYTHON  = hasattr(sys, 'JYTHON_JAR')
 
-try:    # Python 2.6 or later
-    from subprocess import Popen, PIPE
-    def _popen3(command):
-        p = Popen(command, shell=True, close_fds=True,
-                  stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        t = (p.stdin, p.stdout, p.stderr)
-        return (p.stdin, p.stdout, p.stderr)
-except ImportError:
-    def _popen3(command):
-        return os.popen3(command)
+from subprocess import Popen, PIPE
+
+def _popen3(command):
+    p = Popen(command, shell=True, close_fds=True,
+              stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    return p
 
 
-class UsersGuideTest(object):
+class TestUsersGuide:
 
     DIR = os.path.dirname(os.path.abspath(__file__)) + '/data/users_guide'
     CWD = os.getcwd()
 
-    def before(self):
-        #sys.stdout.write('\n** test_%s: (' % self.__name__)
+    def setup_method(self, method):
+        self.__name__ = method.__name__[len('test_'):]
+        self._testMethodName = method.__name__
         sys.stdout.write(' (')
         os.chdir(self.DIR + '/test_' + self.__name__)
         for x in glob('*.cache') + glob('views/*.cache'):
@@ -49,43 +44,48 @@ class UsersGuideTest(object):
                     "  5:         else\n"
                     "            ^\n"
                     )
-                f = open('result.output', 'w'); f.write(s); f.close()
+                with open('result.output', 'w') as f:
+                    f.write(s)
                 del s
 
-    def after(self):
+    def teardown_method(self):
         os.chdir(self.CWD)
 
     def _test(self):
         result_files = sorted(glob('result*.output'))
         for fname in result_files:
             sys.stdout.write(' %s' % fname)
-            result = open(fname).read()
+            with open(fname) as f:
+                result = f.read()
             command, expected = re.split(r'\n', result, 1)
-            command = re.sub('^\$ ', '', command)
+            command = re.sub(r'^\$ ', '', command)
             if self.__name__ == 'logging':
-                sin, sout, serr = _popen3(command)
-                sin.close()
-                actual = sout.read() + serr.read()
-                sout.close()
-                serr.close()
-                if python3:
-                    actual = actual.decode('utf-8')
+                proc = _popen3(command)
+                proc.stdin.close()
+                actual = proc.stdout.read() + proc.stderr.read()
+                proc.stdout.close()
+                proc.stderr.close()
+                proc.wait()
+                actual = actual.decode('utf-8')
                 actual = re.sub(r'file=.*?/test_logging/', "file='/home/user/", actual)
             else:
-                actual = os.popen(command).read()
+                with os.popen(command) as p:
+                    actual = p.read()
                 if self.__name__ == 'm17n':
                     expected = re.sub(r'timestamp: \d+(\.\d+)?', 'timestamp: 0.0', expected)
                     actual   = re.sub(r'timestamp: \d+(\.\d+)?', 'timestamp: 0.0', actual)
             if self._testMethodName == 'test_nested':
                 expected = re.sub(r'[ \t]*\#.*', '', expected)
-            ok (actual) == expected
+            assert actual == expected
         if not result_files:
             fname = glob('*main*.py')[0]
             command = sys.executable + " " + fname
-            actual = os.popen(command).read()
+            with os.popen(command) as p:
+                actual = p.read()
             fname = glob('*.expected')[0]
-            f = open(fname); expected = f.read(); f.close()
-            ok (actual) == expected
+            with open(fname) as f:
+                expected = f.read()
+            assert actual == expected
         sys.stdout.write(' )')
 
     def test_010(self):
@@ -174,6 +174,3 @@ class UsersGuideTest(object):
 
     def test_trace(self):
         self._test()
-
-if __name__ == '__main__':
-    run()

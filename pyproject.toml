@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytenjin"
-version = "1.1.2"
+version = "1.0.0"
 description = "A fast and full-featured template engine based on embedded Python (maintained fork)"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -45,3 +45,9 @@ pytenjin = "tenjin.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

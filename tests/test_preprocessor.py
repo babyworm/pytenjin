@@ -1,12 +1,12 @@
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
 
 import sys, os, re, time
 from glob import glob
-from oktest import ok, not_ok, run, test, todo
-from oktest.dummy import dummy_file
+import pytest
 
 import tenjin
 #from tenjin.helpers import escape, to_str
@@ -15,52 +15,56 @@ from tenjin.helpers import *
 lvars = "_extend=_buf.extend;_to_str=to_str;_escape=escape; "
 
 
-class PreprocessorTest(object):
+class TestPreprocessor(object):
 
     INPUT = r"""
-	<?PY WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] ?>
-	<select>
-	<?py curr = params.get('wday') ?>
-	<?PY for i, wday in enumerate(WEEKDAY): ?>
-	  <option value="#{{i}}"#{selected(curr==#{{i}})}>${{wday}}</option>
-	<?PY #endfor ?>
-	</select>
-	"""[1:].replace("\t", "")
+<?PY WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] ?>
+<select>
+<?py curr = params.get('wday') ?>
+<?PY for i, wday in enumerate(WEEKDAY): ?>
+  <option value="#{{i}}"#{selected(curr==#{{i}})}>${{wday}}</option>
+<?PY #endfor ?>
+</select>
+"""[1:].replace("\t", "")
     SCRIPT = lvars + r"""
-	WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-	_extend(('''<select>
-	<?py curr = params.get(\'wday\') ?>\n''', ));
-	for i, wday in enumerate(WEEKDAY):
-	    _extend(('''  <option value="''', _to_str(_decode_params(i)), '''"#{selected(curr==''', _to_str(_decode_params(i)), ''')}>''', _escape(_to_str(_decode_params(wday))), '''</option>\n''', ));
-	#endfor
-	_extend(('''</select>\n''', ));
-	"""[1:].replace("\t", "")
+WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+_extend(('''<select>
+<?py curr = params.get(\'wday\') ?>\n''', ));
+for i, wday in enumerate(WEEKDAY):
+    _extend(('''  <option value="''', _to_str(_decode_params(i)), '''"#{selected(curr==''', _to_str(_decode_params(i)), ''')}>''', _escape(_to_str(_decode_params(wday))), '''</option>\n''', ));
+#endfor
+_extend(('''</select>\n''', ));
+"""[1:].replace("\t", "")
     OUTPUT = r"""
-	<select>
-	<?py curr = params.get('wday') ?>
-	  <option value="0"#{selected(curr==0)}>Sun</option>
-	  <option value="1"#{selected(curr==1)}>Mon</option>
-	  <option value="2"#{selected(curr==2)}>Tue</option>
-	  <option value="3"#{selected(curr==3)}>Wed</option>
-	  <option value="4"#{selected(curr==4)}>Thu</option>
-	  <option value="5"#{selected(curr==5)}>Fri</option>
-	  <option value="6"#{selected(curr==6)}>Sat</option>
-	</select>
-	"""[1:].replace("\t", "")
+<select>
+<?py curr = params.get('wday') ?>
+  <option value="0"#{selected(curr==0)}>Sun</option>
+  <option value="1"#{selected(curr==1)}>Mon</option>
+  <option value="2"#{selected(curr==2)}>Tue</option>
+  <option value="3"#{selected(curr==3)}>Wed</option>
+  <option value="4"#{selected(curr==4)}>Thu</option>
+  <option value="5"#{selected(curr==5)}>Fri</option>
+  <option value="6"#{selected(curr==6)}>Sat</option>
+</select>
+"""[1:].replace("\t", "")
 
     def test_preprocessor_class(self):
-        input  = self.INPUT
+        input = self.INPUT
         script = self.SCRIPT
         output = self.OUTPUT
         filename = 'test_preprocess1.pyhtml'
-        @dummy_file(filename, input)
-        def _():
+        try:
+            f = open(filename, 'w'); f.write(input); f.close()
             preprocessor = tenjin.Preprocessor(filename)
-            ok (preprocessor.script) == script
-            ok (preprocessor.render()) == output
+            assert preprocessor.script == script
+            assert preprocessor.render() == output
+        finally:
+            for x in [filename, filename + '.cache']:
+                if os.path.isfile(x):
+                    os.unlink(x)
 
-    @test("'{}' is available in '${{}}' or '#{}}}', such as '${{foo({'x':1})}}'")
-    def _(self):
+    def test_curly_braces_available_in_expressions(self):
+        """'{}' is available in '${{}}' or '#{}}}', such as '${{foo({'x':1})}}'"""
         input = """
 <p>${{f({'a':1})+g({'b':2})}}</p>
 <p>#{{f({'c':3})+g({'d':4})}}</p>
@@ -71,11 +75,11 @@ class PreprocessorTest(object):
 """
         t = tenjin.Preprocessor()
         script = t.convert(input)
-        ok (script) == expected
+        assert script == expected
 
 
 
-class TemplatePreprocessorTest(object):
+class TestTemplatePreprocessor(object):
 
     INPUT = r"""
 <div>
@@ -111,32 +115,32 @@ class TemplatePreprocessorTest(object):
         input, expected = self.INPUT, self.EXPECTED
         context = { 'items': ["<AAA>", "B&B"] }
         pp = tenjin.TemplatePreprocessor()
-        ok (pp(input, filename="foobar.rhtml", context=context)) == expected
+        assert pp(input, filename="foobar.rhtml", context=context) == expected
 
-    @test("#__init__(): takes preprocessor class.")
-    def _(self):
+    def test_init_takes_preprocessor_class(self):
+        """#__init__(): takes preprocessor class."""
         pp = tenjin.TemplatePreprocessor(tenjin.SafePreprocessor)
-        ok (pp.factory) == tenjin.SafePreprocessor
+        assert pp.factory == tenjin.SafePreprocessor
 
-    @test("#__init__(): default preprocessor class is tenjin.Preprocessor.")
-    def _(self):
+    def test_init_default_preprocessor_class(self):
+        """#__init__(): default preprocessor class is tenjin.Preprocessor."""
         pp = tenjin.TemplatePreprocessor()
-        ok (pp.factory) == tenjin.Preprocessor
+        assert pp.factory == tenjin.Preprocessor
 
-    @test("#__call__(): creates preprocessor object with specified class.")
-    def _(self):
+    def test_call_creates_preprocessor_object_with_specified_class(self):
+        """#__call__(): creates preprocessor object with specified class."""
         input = self.INPUT
         context = { 'items': ["<AAA>", "B&B"] }
-        def fn(): pp(input, filename="foobar.pyhtml", context=context)
-        #
+
         pp = tenjin.TemplatePreprocessor(tenjin.Preprocessor)
-        ok (fn).not_raise()
-        #
+        pp(input, filename="foobar.pyhtml", context=context)
+
         pp = tenjin.TemplatePreprocessor(tenjin.SafePreprocessor)
-        ok (fn).raises(tenjin.TemplateSyntaxError, "#{{item}}: '#{{}}' is not allowed with SafePreprocessor.")
+        with pytest.raises(tenjin.TemplateSyntaxError, match=re.escape("#{{item}}: '#{{}}' is not allowed with SafePreprocessor.")):
+            pp(input, filename="foobar.pyhtml", context=context)
 
 
-class TrimPreprocessorTest(object):
+class TestTrimPreprocessor(object):
 
     INPUT = r"""
 <ul>
@@ -148,8 +152,8 @@ class TrimPreprocessorTest(object):
 </ul>
 """[1:]
 
-    @test("remove spaces before '<' at beginning of line")
-    def _(self):
+    def test_remove_spaces_before_lt_at_beginning_of_line(self):
+        """remove spaces before '<' at beginning of line"""
         expected = r"""
 <ul>
 <?py i = 0 ?>
@@ -161,10 +165,10 @@ class TrimPreprocessorTest(object):
 """[1:]
         input = self.INPUT
         pp = tenjin.TrimPreprocessor()
-        ok (pp(input)) == expected
+        assert pp(input) == expected
 
-    @test("remove all spaces at beginning of line when argument 'all' is true")
-    def _(self):
+    def test_remove_all_spaces_when_all_is_true(self):
+        """remove all spaces at beginning of line when argument 'all' is true"""
         expected = r"""
 <ul>
 <?py i = 0 ?>
@@ -176,13 +180,13 @@ i += 1 ?>
 """[1:]
         input = self.INPUT
         pp = tenjin.TrimPreprocessor(True)
-        ok (pp(input)) == expected
+        assert pp(input) == expected
 
 
-class PrefixedLinePreprocessorTest(object):
+class TestPrefixedLinePreprocessor(object):
 
-    @test("converts lines which has prefix (':: ') into '<?py ... ?>'.")
-    def _(self):
+    def test_converts_prefixed_lines_into_php_tags(self):
+        """converts lines which has prefix (':: ') into '<?py ... ?>'."""
         input = r"""
 <ul>
 :: i = 0
@@ -202,10 +206,10 @@ class PrefixedLinePreprocessorTest(object):
 </ul>
 """[1:]
         pp = tenjin.PrefixedLinePreprocessor()
-        ok (pp(input)) == expected
+        assert pp(input) == expected
 
-    @test("able to mix '<?py ... ?>' and ':: '.")
-    def _(self):
+    def test_able_to_mix_php_tags_and_prefix(self):
+        """able to mix '<?py ... ?>' and ':: '."""
         input = r"""
 <ul>
 :: i = 0
@@ -225,10 +229,10 @@ class PrefixedLinePreprocessorTest(object):
 </ul>
 """[1:]
         pp = tenjin.PrefixedLinePreprocessor()
-        ok (pp(input)) == expected
+        assert pp(input) == expected
 
 
-class JavaScriptPreprocessorTest(object):
+class TestJavaScriptPreprocessor(object):
 
     INPUT = r"""
 <table>
@@ -266,76 +270,66 @@ _buf+='  <div>Hello '+_E(username)+'!</div>\n';
 return _buf;};</script>
 """[1:]
 
-    def provide_pp(self):
+    def _make_pp(self):
         return tenjin.JavaScriptPreprocessor()
 
-    def provide_fname(self):
+    def _make_fname(self):
         return "_test_pp.rbhtml"
 
-    @test("converts embedded javascript template into client-side template function")
-    def _(self, pp, fname):
-        ok (pp(self.INPUT, filename=fname)) == self.OUTPUT
+    def test_converts_embedded_javascript_template_into_client_side_template_function(self):
+        """converts embedded javascript template into client-side template function"""
+        pp = self._make_pp()
+        fname = self._make_fname()
+        assert pp(self.INPUT, filename=fname) == self.OUTPUT
 
-    @test("raises error when extra '#/JS' found")
-    def _(self, pp, fname):
-        def fn(): pp("foo\n<!-- #/JS -->\n", filename=fname)
-        ok (fn).raises(tenjin.ParseError, "unexpected '<!-- #/JS -->'. (file: _test_pp.rbhtml, line: 2)")
+    def test_raises_error_when_extra_js_end_found(self):
+        """raises error when extra '#/JS' found"""
+        pp = self._make_pp()
+        fname = self._make_fname()
+        with pytest.raises(tenjin.ParseError, match=re.escape("unexpected '<!-- #/JS -->'. (file: _test_pp.rbhtml, line: 2)")):
+            pp("foo\n<!-- #/JS -->\n", filename=fname)
 
-    @test("raises error when '#JS' doesn't contain function name")
-    def _(self, pp, fname):
-        @todo
-        def func():
-            def fn(): pp("foo\n<!-- #JS -->\n", filename=fname)
-            ok (fn).raises(tenjin.ParseError, "'#JS' found but not function name")
-        func()
+    def test_raises_error_when_js_is_not_closed(self):
+        """raises error when '#JS' is not closed"""
+        pp = self._make_pp()
+        fname = self._make_fname()
+        with pytest.raises(tenjin.ParseError, match=re.escape("render_table(items) is not closed by '<!-- #/JS -->'. (file: %s, line: 2)" % (fname,))):
+            pp("foo\n<!-- #JS: render_table(items) -->\nxxx", filename=fname)
 
-    @test("raises error when '#JS' is not closed")
-    def _(self, pp, fname):
-        def fn(): pp("foo\n<!-- #JS: render_table(items) -->\nxxx", filename=fname)
-        ok (fn).raises(tenjin.ParseError, "render_table(items) is not closed by '<!-- #/JS -->'. (file: %s, line: 2)" % (fname,))
-
-    @test("raises error when '#JS' is nested")
-    def _(self, pp, fname):
+    def test_raises_error_when_js_is_nested(self):
+        """raises error when '#JS' is nested"""
+        pp = self._make_pp()
+        fname = self._make_fname()
         input = r"""
 <!-- #JS: outer(items) -->
   <!-- #JS: inner(items) -->
   <!-- #/JS -->
 <!-- #/JS -->
 """[1:]
-        def fn(): pp(input, filename=fname)
-        ok (fn).raises(tenjin.ParseError, "inner(items) is nested in outer(items). (file: %s, line: 2)" % (fname,))
+        with pytest.raises(tenjin.ParseError, match=re.escape("inner(items) is nested in outer(items). (file: %s, line: 2)" % (fname,))):
+            pp(input, filename=fname)
 
-    @test("raises error when func name on '#/JS' is different from that of '#JS")
-    def _(self, pp, fname):
-        @todo
-        def func():
-            input = r"""
-<!-- #JS: foo(items) -->
-<!-- #/JS: bar() -->
-"""[1:]
-            def fn(): pp(input, filename=fname)
-            ok (fn).raises(tenjin.ParseError, "'#/JS: foo()' expected but got '#/JS: bar()'")
-        func()
+    def test_js_func_contains_js_functions_necessary(self):
+        """JS_FUNC: contains JS functions necessary."""
+        assert re.search(r'function _E\(.*?\)', tenjin.JS_FUNC)
+        assert re.search(r'function _S\(.*?\)', tenjin.JS_FUNC)
 
-    @test("JS_FUNC: contains JS functions necessary.")
-    def _(self):
-        ok (tenjin.JS_FUNC).matches(r'function _E\(.*?\)')
-        ok (tenjin.JS_FUNC).matches(r'function _S\(.*?\)')
+    def test_js_func_is_a_escapedstr(self):
+        """JS_FUNC: is a EscapedStr."""
+        assert isinstance(tenjin.JS_FUNC, tenjin.escaped.EscapedStr)
 
-    @test("JS_FUNC: is a EscapedStr.")
-    def _(self):
-        ok (tenjin.JS_FUNC).is_a(tenjin.escaped.EscapedStr)
-
-    @test("#__init__(): can take attrubtes of <script> tag")
-    def _(self, pp, fname):
+    def test_init_can_take_attributes_of_script_tag(self):
+        """#__init__(): can take attrubtes of <script> tag"""
+        fname = self._make_fname()
         input = self.INPUT
         expected = self.OUTPUT.replace('<script>', '<script type="text/javascript">')
         pp = tenjin.JavaScriptPreprocessor(type='text/javascript')
         actual = pp(input, filename=fname)
-        ok (actual) == expected
+        assert actual == expected
 
-    @test("#parse(): converts JS template into JS code.")
-    def _(self, pp):
+    def test_parse_converts_js_template_into_js_code(self):
+        """#parse(): converts JS template into JS code."""
+        pp = self._make_pp()
         input = r"""
 <div>
   <!-- #JS: render_table(items) -->
@@ -369,10 +363,11 @@ _buf+='  </table>\n';
 </div>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
+        assert output == expected
 
-    @test("#parse(): escapes {=expr=} but not {==expr==}.")
-    def _(self, pp):
+    def test_parse_escapes_expr_but_not_double_expr(self):
+        """#parse(): escapes {=expr=} but not {==expr==}."""
+        pp = self._make_pp()
         input = r"""
 <!-- #JS: render() -->
 <b>{=var1=}</b><b>{==var2==}</b>
@@ -384,10 +379,11 @@ _buf+='<b>'+_E(var1)+'</b><b>'+_S(var2)+'</b>\n';
 return _buf;};</script>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
+        assert output == expected
 
-    @test("#parse(): supports both ${expr} and #{expr} in addition to {= =}.")
-    def _(self, pp):
+    def test_parse_supports_both_dollar_and_hash_expr_in_addition_to_equals(self):
+        """#parse(): supports both ${expr} and #{expr} in addition to {= =}."""
+        pp = self._make_pp()
         input = r"""
 <!-- #JS: render() -->
 <b>${var1}</b><b>#{var2}</b>
@@ -399,10 +395,11 @@ _buf+='<b>'+_E(var1)+'</b><b>'+_S(var2)+'</b>\n';
 return _buf;};</script>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
+        assert output == expected
 
-    @test("#parse(): can parse '${f({x:1})+f({y:2})}'.")
-    def _(self, pp):
+    def test_parse_can_parse_dollar_expr_with_curly_braces(self):
+        """#parse(): can parse '${f({x:1})+f({y:2})}'."""
+        pp = self._make_pp()
         input = r"""
 <!-- #JS: render() -->
 <p>${f({x:1})+f({y:2})}</p>
@@ -414,10 +411,11 @@ _buf+='<p>'+_E(f({x:1})+f({y:2}))+'</p>\n';
 return _buf;};</script>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
+        assert output == expected
 
-    @test("#parse(): switches to function assignment when function name contains symbol.")
-    def _(self, pp):
+    def test_parse_switches_to_function_assignment_when_function_name_contains_symbol(self):
+        """#parse(): switches to function assignment when function name contains symbol."""
+        pp = self._make_pp()
         input = r"""
 <!-- #JS: $jQuery.render_title(title) -->
 <h1>${title}</h1>
@@ -429,10 +427,11 @@ _buf+='<h1>'+_E(title)+'</h1>\n';
 return _buf;};</script>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
+        assert output == expected
 
-    @test("#parse(): escapes single quotation and backslash.")
-    def _(self, pp):
+    def test_parse_escapes_single_quotation_and_backslash(self):
+        """#parse(): escapes single quotation and backslash."""
+        pp = self._make_pp()
         input = r"""
 <!-- #JS: render() -->
 <h1>'Quote' and \Escape\n</h1>
@@ -444,9 +443,4 @@ _buf+='<h1>\'Quote\' and \\Escape\\n</h1>\n';
 return _buf;};</script>
 """[1:]
         output = pp.parse(input)
-        ok (output) == expected
-
-
-
-if __name__ == '__main__':
-    run()
+        assert output == expected

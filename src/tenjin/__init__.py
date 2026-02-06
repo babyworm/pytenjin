@@ -4,8 +4,7 @@ Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com)
 License: MIT License
 
 This is a maintained fork of the original Tenjin template engine.
-Original project: https://pypi.org/project/Tenjin/
-Original author: makoto kuwata (kuwata-lab.com)
+Original project: https://pypi.org/project/Tenjin/ by makoto kuwata.
 See THIRD_PARTY_LICENSES for the original license.
 """
 
@@ -23,11 +22,11 @@ for _name in dir(_core):
     _obj = getattr(_core, _name)
     if _name.startswith('__') and _name.endswith('__'):
         continue  # skip dunder attributes
-    if not isinstance(_obj, _types.ModuleType) or _name in ('helpers', 'escaped', 'html', 'gae'):
+    if not isinstance(_obj, _types.ModuleType) or _name in ('helpers', 'escaped', 'html'):
         globals()[_name] = _obj
 del _name, _obj
 
-__version__ = "1.1.2"
+__version__ = "1.0.0"
 __license__ = "MIT License"
 __all__ = ('Template', 'Engine')
 

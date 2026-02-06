@@ -1,6 +1,6 @@
 # pyTenjin Examples
 
-release: 1.1.2
+release: 1.0.0
 
 ## Table of Contents
 

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
 
-from oktest import ok, not_ok, run
+import pytest
+import re
+import re as _re
 import sys, os, traceback, time
 import yaml
 
@@ -21,15 +24,8 @@ def _errmsg(errmsg):
             return "global " + errmsg
     return errmsg
 
-filename = None
-for filename in ['../bin/pytenjin', 'bin/pytenjin']:
-    if os.path.exists(filename):
-        break
-
-_name_orig = __name__
-__name__ = 'dummy'
-exec(tenjin._read_binary_file(filename).decode('utf-8'))
-__name__ = _name_orig
+from tenjin.cli import Main, CommandOptionError, NoTextTemplate
+import tenjin.cli as _cli_mod
 
 def to_list(value):
     if isinstance(value, list):
@@ -127,12 +123,12 @@ items = ['aaa', 'bbb', 'ccc']
 """
 
 
-class MainTest(object):
+class TestMain:
 
-    def before(self):
+    def setup_method(self):
         pass
 
-    def after(self):
+    def teardown_method(self):
         pass
 
     def _test(self):
@@ -205,10 +201,11 @@ class MainTest(object):
                         ex = sys.exc_info()[1]
                         lst[0] = ex
                         raise ex
-                ok (f1).raises(exception)
+                with pytest.raises(exception):
+                    f1()
                 if errormsg:
                     ex = lst[0]
-                    ok (str(ex)) == errormsg
+                    assert str(ex) == errormsg
             else:
                 output = app.execute()
                 #print "*** expected=%s" % expected
@@ -216,7 +213,7 @@ class MainTest(object):
                 if python2:
                     if encoding and isinstance(output, unicode):
                         output = output.encode(encoding)
-                ok (output) == expected
+                assert output == expected
         finally:
             try:
                 if filename:
@@ -345,7 +342,7 @@ _extend(('''</ul>\n''', ));
         cachename = self.filename + '.cache'
         try:
             self._test()
-            ok (cachename).exists()
+            assert os.path.exists(cachename)
             #if not JYTHON:
             #    import marshal
             #    dct = marshal.load(open(cachename, 'rb'))
@@ -357,7 +354,7 @@ _extend(('''</ul>\n''', ));
             f = open(cachename); cached = f.read(); f.close()
             # Normalize timestamp precision for Python 3.12+
             cached = re.sub(r'timestamp: (\d+)\.\d+', r'timestamp: \1.0', cached)
-            ok (cached) == expected_cache
+            assert cached == expected_cache
         finally:
             if os.path.exists(cachename):
                 os.unlink(cachename)
@@ -550,7 +547,7 @@ _extend(('''</ul>\n''', ));
         f = open(filename, 'w'); f.write(INPUT); f.close()
         e = tenjin.Engine(cache=tenjin.MarshalCacheStorage())
         e.get_template(filename)
-        ok (cachename).exists()
+        assert os.path.exists(cachename)
         # dump test
         try:
             self.filename = False
@@ -702,7 +699,7 @@ _extend(('''</ul>\n''', ));
         self.input    = "Hello #{html.escape('Haru&Kyon')}!"
         self.expected = "Hello Haru&amp;Kyon!"
         #
-        globals().pop('html', None)
+        _cli_mod.__dict__.pop('html', None)
         self.exception = NameError
         self.errormsg = "name 'html' is not defined"
         self._test()
@@ -794,7 +791,7 @@ _extend(('''</ul>\n''', ));
         try:
             self._test()
         finally:
-            globals()['tostr'] = tostr_func
+            _cli_mod.__dict__['to_str'] = tostr_func
 
     def test_template_path(self):  # --path
         layout = r'''<html>
@@ -944,8 +941,3 @@ function _EF(c){return _ET[c];};</script>
             self._test()
         finally:
             pass
-
-
-
-if __name__ == '__main__':
-    run()

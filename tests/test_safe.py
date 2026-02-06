@@ -1,10 +1,12 @@
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
 
-from oktest import ok, not_ok, run, spec
-from oktest.tracer import Tracer
+import pytest
+import re as _re
+from unittest.mock import MagicMock
 import sys, os, re
 
 import tenjin
@@ -31,95 +33,98 @@ else:
         return s.encode('utf-8')
 
 
-class EscapedStrTest(object):
+class TestEscapedStr:
 
     def test_is_escaped(self):
         if "arg is an instance of Escaped class then return True.":
-            ok (is_escaped(EscapedStr("sos"))) == True
+            assert is_escaped(EscapedStr("sos")) == True
             if python2:
-                ok (is_escaped(EscapedUnicode(u("sos")))) == True
+                assert is_escaped(EscapedUnicode(u("sos"))) == True
             elif python3:
-                ok (is_escaped(EscapedBytes(b("sos")))) == True
+                assert is_escaped(EscapedBytes(b("sos"))) == True
             #end
         if "arg is not an instance of Escaped class then return False.":
-            ok (is_escaped("sos")) == False
+            assert is_escaped("sos") == False
             if python2:
-                ok (is_escaped(u("sos"))) == False
+                assert is_escaped(u("sos")) == False
             elif python3:
-                ok (is_escaped(b("sos"))) == False
+                assert is_escaped(b("sos")) == False
             #end
 
     def test_as_escaped(self):
         if "arg is a str then returns EscapedStr object.":
-            ok (as_escaped("<foo>")).is_a(EscapedStr)
+            assert isinstance(as_escaped("<foo>"), EscapedStr)
         if python2:
             if "arg is a unicode then returns EscapedUnicode object.":
-                ok (as_escaped(u("<foo>"))).is_a(EscapedUnicode)
+                assert isinstance(as_escaped(u("<foo>")), EscapedUnicode)
         elif python3:
             if "arg is a bytes then returns EscapedBytes object.":
-                ok (as_escaped(b("<foo>"))).is_a(EscapedBytes)
+                assert isinstance(as_escaped(b("<foo>")), EscapedBytes)
         if "arg is not a basestring then returns TypeError.":
             def f(): as_escaped(123)
             if python2:
-                ok (f).raises(TypeError, "as_escaped(123): expected str or unicode.")
+                with pytest.raises(TypeError, match=_re.escape("as_escaped(123): expected str or unicode.")):
+                    f()
             elif python3:
-                ok (f).raises(TypeError, "as_escaped(123): expected str or bytes.")
+                with pytest.raises(TypeError, match=_re.escape("as_escaped(123): expected str or bytes.")):
+                    f()
         if "arg is never escaped.":
-            ok (as_escaped("<foo>")) == "<foo>"
-            ok (as_escaped(u("<foo>"))) == u("<foo>")
+            assert as_escaped("<foo>") == "<foo>"
+            assert as_escaped(u("<foo>")) == u("<foo>")
 
     def test_to_escaped(self):
         if "arg is escaped then returns it as-is.":
             obj = EscapedStr("<foo>")
-            #ok (to_escaped(obj)).is_(obj)
-            ok (to_escaped(obj)) == obj
+            #assert to_escaped(obj) is obj
+            assert to_escaped(obj) == obj
             if python2:
                 obj = EscapedUnicode(u("<foo>"))
-                #ok (to_escaped(obj)).is_(obj)
-                ok (to_escaped(obj)) == obj
+                #assert to_escaped(obj) is obj
+                assert to_escaped(obj) == obj
             elif python3:
                 obj = EscapedBytes(b("<foo>"))
-                #ok (to_escaped(obj)).is_(obj)
-                ok (to_escaped(obj)) == EscapedStr("<foo>")
+                #assert to_escaped(obj) is obj
+                assert to_escaped(obj) == EscapedStr("<foo>")
         if "arg is not escaped then escapes it and returns escaped object.":
             ret = to_escaped("<foo>")
-            ok (ret) == "&lt;foo&gt;"
-            ok (ret).is_a(EscapedStr)
+            assert ret == "&lt;foo&gt;"
+            assert isinstance(ret, EscapedStr)
             #
             if python2:
                 ret = to_escaped(u("<foo>"))
-                ok (ret) == u("&lt;foo&gt;")
-                ok (ret).is_a(EscapedStr)     # not EscapedUnicode!
+                assert ret == u("&lt;foo&gt;")
+                assert isinstance(ret, EscapedStr)     # not EscapedUnicode!
             elif python3:
                 #ret = to_escaped(b("<foo>"))
-                #ok (ret) == b("&lt;foo&gt;")
-                #ok (ret).is_a(EscapedBytes)
+                #assert ret == b("&lt;foo&gt;")
+                #assert isinstance(ret, EscapedBytes)
                 ret = to_escaped(to_str(b("<foo>")))
-                ok (ret) == "&lt;foo&gt;"
-                ok (ret).is_a(EscapedStr)
+                assert ret == "&lt;foo&gt;"
+                assert isinstance(ret, EscapedStr)
         if "arg is not a basestring then calls to_str() and escape(), and returns EscapedStr":
             ret = to_escaped(None)
-            ok (ret) == ""
-            ok (ret).is_a(EscapedStr)
+            assert ret == ""
+            assert isinstance(ret, EscapedStr)
             ret = to_escaped(123)
-            ok (ret) == "123"
-            ok (ret).is_a(EscapedStr)
+            assert ret == "123"
+            assert isinstance(ret, EscapedStr)
         if "arg has __html__() method then calls it.":
-            tr = Tracer()
-            obj = tr.fake_obj(__html__="<b>OK</b>")
+            obj = MagicMock()
+            obj.__html__ = MagicMock(return_value="<b>OK</b>")
             ret = to_escaped(obj)
-            ok (ret) == "&lt;b&gt;OK&lt;/b&gt;"
-            ok (ret).is_a(EscapedStr)
-            ok (tr[-1].name) == '__html__'
+            assert ret == "&lt;b&gt;OK&lt;/b&gt;"
+            assert isinstance(ret, EscapedStr)
+            obj.__html__.assert_called_once()
             #
-            obj = tr.fake_obj(__html__=as_escaped("<b>WaWaWa</b>"))
+            obj = MagicMock()
+            obj.__html__ = MagicMock(return_value=as_escaped("<b>WaWaWa</b>"))
             ret = to_escaped(obj)
-            ok (ret) == "<b>WaWaWa</b>"
-            ok (ret).is_a(EscapedStr)
-            ok (tr[-1].name) == '__html__'
+            assert ret == "<b>WaWaWa</b>"
+            assert isinstance(ret, EscapedStr)
+            obj.__html__.assert_called_once()
 
 
-class SafeTemplateTest(object):
+class TestSafeTemplate:
 
     input = ( "<?py for item in items: ?>\n"
               "<p>{=item=}</p>\n"
@@ -133,28 +138,29 @@ class SafeTemplateTest(object):
         if "matched expression is '${...}' then returns expr string and True":
             m = t.expr_pattern().search("<p>${item}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (True, False))
+            assert ret == ('item', (True, False))
         if "matched expression is '#{...}' then raises error":
             m = t.expr_pattern().search("<p>#{item}</p>")
             def f(): t.get_expr_and_flags(m)
-            ok (f).raises(tenjin.TemplateSyntaxError,
-                          "#{item}: '#{}' is not allowed with SafeTemplate.")
+            with pytest.raises(tenjin.TemplateSyntaxError,
+                          match=_re.escape("#{item}: '#{}' is not allowed with SafeTemplate.")):
+                f()
         if "matched expression is '{=...=}' then returns expr string and True":
             m = t.expr_pattern().search("<p>{=item=}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (True, False))
+            assert ret == ('item', (True, False))
         if "matched expression is '{==...==}' then returns expr string and False":
             m = t.expr_pattern().search("<p>{==item==}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (False, True))
+            assert ret == ('item', (False, True))
 
     def test_FUNCTEST_of_convert(self):
         if "converted then use 'to_escaped()' instead of 'escape()'":
             t = tenjin.SafeTemplate(input="<p>{=item=}</p>")
-            ok (t.script) == lvars + "_extend(('''<p>''', _escape(item), '''</p>''', ));"
+            assert t.script == lvars + "_extend(('''<p>''', _escape(item), '''</p>''', ));"
         if "{==...==} exists then skips to escape by to_escaped()":
             t = tenjin.SafeTemplate(input="<p>{==foo()==}</p>")
-            ok (t.script) == lvars + "_extend(('''<p>''', _to_str(foo()), '''</p>''', ));"
+            assert t.script == lvars + "_extend(('''<p>''', _to_str(foo()), '''</p>''', ));"
 
     def test_FUNCTEST_of_render(self):
         if "rendered then avoid escaping of escaped object":
@@ -162,7 +168,7 @@ class SafeTemplateTest(object):
             context  = {'var1': '<>&"', 'var2': as_escaped('<>&"')}
             expected = "var1: &lt;&gt;&amp;&quot;, var2: <>&\"\n"
             t = tenjin.SafeTemplate(input=input)
-            ok (t.render(context)) == expected
+            assert t.render(context) == expected
             #
             if python2:
                 u = unicode
@@ -170,7 +176,7 @@ class SafeTemplateTest(object):
                 context  = {'var1': u('<>&"'), 'var2': as_escaped(u('<>&"'))}
                 expected = "var1: &lt;&gt;&amp;&quot;, var2: <>&\"\n"
                 t = tenjin.SafeTemplate(input=input)
-                ok (t.render(context)) == expected
+                assert t.render(context) == expected
 
     def test_FUNCTEST_with_engine(self):
         fname = 'test_safe_template.pyhtml'
@@ -180,14 +186,14 @@ class SafeTemplateTest(object):
             f = open(fname, 'w'); f.write(self.input); f.close()
             engine = tenjin.Engine()
             output = engine.render(fname, self.context.copy())
-            ok (output) == self.expected
+            assert output == self.expected
         finally:
             tenjin.Engine.templateclass = _tclass
             for x in [fname, fname+'.cache']:
                 os.path.isfile(x) and os.unlink(x)
 
 
-class SafePreprocessorTest(object):
+class TestSafePreprocessor:
 
     input = ( "<?PY for i in range(2): ?>\n"
               "<h1>{#=i=#}</h1>\n"
@@ -220,20 +226,21 @@ for item in items:
         if "matched expression is '${{...}}' then returns expr string and True":
             m = t.expr_pattern().search("<p>${{item}}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (True, False))
+            assert ret == ('item', (True, False))
         if "matched expression is '#{{...}}' then raises error":
             m = t.expr_pattern().search("<p>#{{item}}</p>")
             def f(): t.get_expr_and_flags(m)
-            ok (f).raises(tenjin.TemplateSyntaxError,
-                          "#{{item}}: '#{{}}' is not allowed with SafePreprocessor.")
+            with pytest.raises(tenjin.TemplateSyntaxError,
+                          match=_re.escape("#{{item}}: '#{{}}' is not allowed with SafePreprocessor.")):
+                f()
         if "matched expression is '{#=...=#}' then returns expr string and True":
             m = t.expr_pattern().search("<p>{#=item=#}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (True, False))
+            assert ret == ('item', (True, False))
         if "matched expression is '{#==...==#}' then returns expr string and False":
             m = t.expr_pattern().search("<p>{#==item==#}</p>")
             ret = t.get_expr_and_flags(m)
-            ok (ret) == ('item', (False, True))
+            assert ret == ('item', (False, True))
 
     def test_FUNCTEST_with_engine(self):
         fname = 'test_safe_preprocessor.pyhtml'
@@ -244,7 +251,7 @@ for item in items:
             f = open(fname, 'w'); f.write(self.input); f.close()
             engine = tenjin.Engine(preprocess=True, preprocessorclass=tenjin.SafePreprocessor)
             t = engine.get_template(fname)
-            ok (t.script) == self.expected_script
+            assert t.script == self.expected_script
         finally:
             tenjin.Engine.templateclass = _backup
             for x in [fname, fname+'.cache']:
@@ -267,7 +274,7 @@ def _with_template(fname, content):
     return deco
 
 
-class SafeEngineTest(object):
+class TestSafeEngine:
 
     def test_FUNCTEST_render(self):
         fname = 'test_safe_engine_render.pyhtml'
@@ -288,7 +295,7 @@ class SafeEngineTest(object):
             engine = tenjin.SafeEngine()
             context = { 'v1': '<&>', 'v2': as_escaped('<&>'), }
             output = engine.render(fname, context)
-            ok (output) == expected
+            assert output == expected
         f()
 
     def test_FUNCTEST_preprocessing2(self):
@@ -340,10 +347,6 @@ _extend(('''  <h1>''', _escape(title), '''</h1>
                 'COPYRIGHT': 'copyright(c)2010 kuwata-lab.com',
             }
             output = engine.render(fname, context)
-            ok (output) == expected_output
-            ok (engine.get_template(fname).script) == expected_script
+            assert output == expected_output
+            assert engine.get_template(fname).script == expected_script
         f()
-
-
-if __name__ == '__main__':
-    run()

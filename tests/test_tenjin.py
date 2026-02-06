@@ -1,20 +1,14 @@
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
-from oktest import ok, not_ok, run, spec
-from oktest.helper import dummy_file
 import sys, os, re
 
 import tenjin
 from tenjin.helpers import *
 
 
-class TenjinTest(object):
+class TestTenjin:
 
     pass
-
-
-
-if __name__ == '__main__':
-    run()

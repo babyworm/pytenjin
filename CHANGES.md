@@ -1,6 +1,6 @@
 # Changes
 
-## Release 1.1.2 (2026-02-06)
+## Release 1.0.0 (2026-02-06)
 
 - [Fork] Forked from Tenjin 1.1.1 as PyTenjin, a maintained fork.
 - [Change] Drop Python 2.x support; require Python 3.8+.
@@ -11,7 +11,9 @@
 - [Change] Convert HTML documentation to Markdown, split into sections.
 - [Change] Update documentation for Python 3.8+ (remove Python 2.x examples, update install instructions).
 
-## Release 1.1.1 (2012-05-18)
+> 참고: 다음 항목들은 원래 Tenjin 프로젝트의 릴리스 노트입니다. (원문 유지)
+
+## Release 0.9 (2012-05-18)
 
 - [Bugfix] Fix 'benchmark/bench.py' to work on PyPy.
 - [Bugfix] Tweak document.

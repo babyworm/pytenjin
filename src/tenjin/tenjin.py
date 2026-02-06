@@ -1,5 +1,5 @@
 ##
-## $Release: 1.1.2 $
+## $Release: 1.0.0 $
 ## $Copyright: Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com) $
 ## $License: MIT License $
 ##
@@ -7,13 +7,13 @@
 ## See THIRD_PARTY_LICENSES for the original license.
 ##
 
-"""Very fast and light-weight template engine based embedded Python.
+"""Very fast and light-weight template engine based on embedded Python.
    See User's Guide and examples for details.
-   http://www.kuwata-lab.com/tenjin/pytenjin-users-guide.html
-   http://www.kuwata-lab.com/tenjin/pytenjin-examples.html
+   - doc/users-guide.md
+   - doc/examples.md
 """
 
-__version__  = "$Release: 1.1.2 $"[10:-2]
+__version__  = "$Release: 1.0.0 $"[10:-2]
 __license__  = "$License: MIT License $"[10:-2]
 __all__      = ('Template', 'Engine', )
 
@@ -493,8 +493,7 @@ class TemplateSyntaxError(SyntaxError):
 class Template(object):
     """Convert and evaluate embedded python string.
        See User's Guide and examples for details.
-       http://www.kuwata-lab.com/tenjin/pytenjin-users-guide.html
-       http://www.kuwata-lab.com/tenjin/pytenjin-examples.html
+       See doc/users-guide.md and doc/examples.md for details.
     """
 
     ## default value of attributes
@@ -1670,8 +1669,7 @@ class TemplateNotFoundError(Exception):
 class Engine(object):
     """Template Engine class.
        See User's Guide and examples for details.
-       http://www.kuwata-lab.com/tenjin/pytenjin-users-guide.html
-       http://www.kuwata-lab.com/tenjin/pytenjin-examples.html
+       See doc/users-guide.md and doc/examples.md for details.
     """
 
     ## default value of attributes
@@ -2002,90 +2000,3 @@ class SafeEngine(Engine):
     preprocessorclass = SafePreprocessor
 
 
-##
-## for Google App Engine
-## (should separate into individual file or module?)
-##
-
-def _dummy():
-    global memcache, _tenjin
-    memcache = _tenjin = None      # lazy import of google.appengine.api.memcache
-    global GaeMemcacheCacheStorage, GaeMemcacheStore, init
-
-    class GaeMemcacheCacheStorage(CacheStorage):
-
-        lifetime = 0     # 0 means unlimited
-
-        def __init__(self, lifetime=None, namespace=None):
-            CacheStorage.__init__(self)
-            if lifetime is not None:  self.lifetime = lifetime
-            self.namespace = namespace
-
-        def _load(self, cachepath):
-            key = cachepath
-            if _tenjin.logger: _tenjin.logger.info("[tenjin.gae.GaeMemcacheCacheStorage] load cache (key=%r)" % (key, ))
-            return memcache.get(key, namespace=self.namespace)
-
-        def _store(self, cachepath, dct):
-            dct.pop('bytecode', None)
-            key = cachepath
-            if _tenjin.logger: _tenjin.logger.info("[tenjin.gae.GaeMemcacheCacheStorage] store cache (key=%r)" % (key, ))
-            ret = memcache.set(key, dct, self.lifetime, namespace=self.namespace)
-            if not ret:
-                if _tenjin.logger: _tenjin.logger.info("[tenjin.gae.GaeMemcacheCacheStorage] failed to store cache (key=%r)" % (key, ))
-
-        def _delete(self, cachepath):
-            key = cachepath
-            memcache.delete(key, namespace=self.namespace)
-
-
-    class GaeMemcacheStore(KeyValueStore):
-
-        lifetime = 0
-
-        def __init__(self, lifetime=None, namespace=None):
-            if lifetime is not None:  self.lifetime = lifetime
-            self.namespace = namespace
-
-        def get(self, key):
-            return memcache.get(key, namespace=self.namespace)
-
-        def set(self, key, value, lifetime=None):
-            if lifetime is None:  lifetime = self.lifetime
-            if memcache.set(key, value, lifetime, namespace=self.namespace):
-                return True
-            else:
-                if _tenjin.logger: _tenjin.logger.info("[tenjin.gae.GaeMemcacheStore] failed to set (key=%r)" % (key, ))
-                return False
-
-        def delete(self, key):
-            return memcache.delete(key, namespace=self.namespace)
-
-        def has(self, key):
-            if memcache.add(key, 'dummy', namespace=self.namespace):
-                memcache.delete(key, namespace=self.namespace)
-                return False
-            else:
-                return True
-
-
-    def init():
-        global memcache, _tenjin
-        if not memcache:
-            from google.appengine.api import memcache
-        if not _tenjin: import tenjin as _tenjin
-        ## avoid cache confliction between versions
-        ver = os.environ.get('CURRENT_VERSION_ID', '1.1')#.split('.')[0]
-        Engine.cache = GaeMemcacheCacheStorage(namespace=ver)
-        ## set fragment cache store
-        helpers.fragment_cache.store    = GaeMemcacheStore(namespace=ver)
-        helpers.fragment_cache.lifetime = 60    #  1 minute
-        helpers.fragment_cache.prefix   = 'fragment.'
-
-
-gae = create_module('tenjin.gae', _dummy,
-                    os=os, helpers=helpers, Engine=Engine,
-                    CacheStorage=CacheStorage, KeyValueStore=KeyValueStore)
-
-
-del _dummy

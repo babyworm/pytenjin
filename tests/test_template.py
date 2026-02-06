@@ -1,11 +1,12 @@
 ###
-### $Release: 1.1.2 $
-### $Copyright: copyright(c) 2007-2012 kuwata-lab.com all rights reserved. $
+### $Release: 1.0.0 $
+### Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com). MIT License.
+### Original: copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 ###
 
-from oktest import ok, not_ok, run, spec, test
-from oktest.tracer import Tracer
-import sys, os, re
+import pytest
+import re
+import sys, os
 
 from testcase_helper import *
 import tenjin
@@ -21,16 +22,16 @@ def _errmsg(errmsg):
     return errmsg
 
 
-class TemplateTest(object):
+class TestTemplate:
 
     code = TestCaseHelper.generate_testcode(__file__)
     exec(code)
 
 
-    def before(self):
+    def setup_method(self):
         pass
 
-    def after(self):
+    def teardown_method(self):
         pass
 
     def _test(self):
@@ -85,21 +86,17 @@ class TemplateTest(object):
                 errormsg = _errmsg(errormsg)
         #
         if exception:
-            try:
+            with pytest.raises(exception) as exc_info:
                 template = tenjin.Template(**options)
                 template.convert(input, filename)
                 template.render(context)
-                self.fail('%s is expected but not raised.' % exception)
-            except Exception:
-                ex = sys.exc_info()[1]
-                ok (ex.__class__) == exception
-                #ok (ex).is_a(exception)
-                if errormsg:
-                    ## SyntaxError has 'msg' attribute instead of 'message'. Why?
-                    #ok (ex.message or ex.msg) == errormsg # failed in python2.3
-                    ok (ex.args[0]) == errormsg
-                if filename:
-                    ok (ex.filename) == filename
+            ex = exc_info.value
+            assert ex.__class__ == exception
+            if errormsg:
+                ## SyntaxError has 'msg' attribute instead of 'message'. Why?
+                assert ex.args[0] == errormsg
+            if filename:
+                assert ex.filename == filename
         else:
             if templateclass:
                 templateclass = eval(templateclass)
@@ -107,10 +104,10 @@ class TemplateTest(object):
             else:
                 template = tenjin.Template(**options)
             script = template.convert(input, filename)
-            ok (script) == source         # encoding=encoding
+            assert script == source         # encoding=encoding
             if expected:
                 output = template.render(context)
-                ok (output) == expected   # encoding=encoding
+                assert output == expected   # encoding=encoding
 
 
 
@@ -127,7 +124,7 @@ class TemplateTest(object):
 #        context = {'items': items}
 #        output1 = template.render(context)
 #        output2 = template.render(items=items)
-#        ok (output2) == output1
+#        assert output2 == output1
 
 
     def test_filename1(self):
@@ -142,8 +139,8 @@ class TemplateTest(object):
             write_file(filename, input)
             template1 = tenjin.Template(filename)
             template2 = tenjin.Template()
-            ok (template2.convert(input)) == template1.script
-            ok (template2.render()) == template1.render()
+            assert template2.convert(input) == template1.script
+            assert template2.render() == template1.render()
         finally:
             try:
                 os.remove(filename)
@@ -164,10 +161,10 @@ class TemplateTest(object):
         template.convert(input)
         def f1():
             template.render()
-        ok (f1).raises(NameError)
+        with pytest.raises(NameError):
+            f1()
         #tenjin.import_module('base64')
         globals()['base64'] = base64
-        #ok (f1).not_raise()
         f1()
 
 
@@ -182,13 +179,13 @@ class TemplateTest(object):
         template.convert(input)
         def f1():
             template.render()
-        ok (f1).raises(NameError)
+        with pytest.raises(NameError):
+            f1()
         if python2:
             #tenjin.import_module(rfc822)
             globals()['rfc822'] = rfc822
         elif python3:
             globals()['email'] = email
-        #ok (f1).not_raise()
         f1()
 
 
@@ -197,7 +194,8 @@ class TemplateTest(object):
             input = "<?py #@ARGS 1x ?>"
             template = tenjin.Template()
             template.convert(input)
-        ok (f).raises(ValueError)
+        with pytest.raises(ValueError):
+            f()
 
 
 #    def test_dummy_if_stmt(self):     ## NEVER!
@@ -230,7 +228,7 @@ class TemplateTest(object):
 #"""[1:]
 #        t = tenjin.Template()
 #        actual = t.convert(input)
-#        ok (actual) == expected
+#        assert actual == expected
 
     lvars = "_extend=_buf.extend;_to_str=to_str;_escape=escape; "
 
@@ -250,193 +248,199 @@ for item in items:
 _extend(('''</ul>\n''', ));
 """
         t = tenjin.Template("test.foobar.pyhtml", input=input)
-        if "input argument is specified then regard it as template content":
-            ok (t.script) == script
-        if "input argument is specified then timestamp is set to False":
-            ok (t.timestamp) == False
+        # input argument is specified then regard it as template content
+        assert t.script == script
+        # input argument is specified then timestamp is set to False
+        assert t.timestamp == False
 
 
     def test_trace(self):
-        if "trace is on then prints template filename as HTML comments":
-            filename = "test.trace.pyhtml"
-            input = "<p>hello #{name}!</p>\n"
-            expected = ( "<!-- ***** begin: %s ***** -->\n"
-                         "<p>hello world!</p>\n"
-                         "<!-- ***** end: %s ***** -->\n" ) % (filename, filename)
-            t = tenjin.Template(filename, input=input, trace=True)
-            output = t.render({'name':'world'})
-            ok (output) == expected
+        # trace is on then prints template filename as HTML comments
+        filename = "test.trace.pyhtml"
+        input = "<p>hello #{name}!</p>\n"
+        expected = ( "<!-- ***** begin: %s ***** -->\n"
+                     "<p>hello world!</p>\n"
+                     "<!-- ***** end: %s ***** -->\n" ) % (filename, filename)
+        t = tenjin.Template(filename, input=input, trace=True)
+        output = t.render({'name':'world'})
+        assert output == expected
 
     def test_option_tostrfunc(self):
         input = "<p>Hello #{name}!</p>"
-        if "passed tostrfunc option then use it":
-            globals()['my_str'] = lambda s: s.upper()
-            t = tenjin.Template(None, input=input, tostrfunc='my_str')
-            output = t.render({'name': 'Haruhi'})
-            ok (output) == "<p>Hello HARUHI!</p>"
-            ok (t.script) == self.lvars.replace('=to_str', '=my_str') + \
-                             "_extend(('''<p>Hello ''', _to_str(name), '''!</p>''', ));"
-            globals().pop('my_str')
-            #
-            t = tenjin.Template(None, input=input, tostrfunc='str')
-            output = t.render({'name': None})
-            ok (output) == "<p>Hello None!</p>"
-            #
-            t = tenjin.Template(None, input=input, tostrfunc='str.upper')
-            output = t.render({'name': 'sos'})
-            ok (output) == "<p>Hello SOS!</p>"
-        if "passed False as tostrfunc option then no function is used":
-            t = tenjin.Template(None, input=input, tostrfunc=False)
-            output = t.render({'name': 'Haruhi'})
-            ok (output) == "<p>Hello Haruhi!</p>"
-            ok (t.script) == self.lvars.replace('=to_str', '=False') + \
-                             "_extend(('''<p>Hello ''', (name), '''!</p>''', ));"
-            #
-            def f(): t.render({'name': 123})
-            if python2:
-                ok (f).raises(TypeError, 'sequence item 1: expected string, int found')
-            elif python3:
-                ok (f).raises(TypeError, 'sequence item 1: expected str instance, int found')
-        if "passed wrong function name as tostrfunc option then raises error":
-            t = tenjin.Template(None, input=input, tostrfunc='johnsmith')
-            def f(): t.render({'name': 'Haruhi'})
-            #ok (f).raises(TypeError, "'NoneType' object is not callable")
-            ok (f).raises(NameError, _errmsg("name 'johnsmith' is not defined"))
+        # passed tostrfunc option then use it
+        globals()['my_str'] = lambda s: s.upper()
+        t = tenjin.Template(None, input=input, tostrfunc='my_str')
+        output = t.render({'name': 'Haruhi'})
+        assert output == "<p>Hello HARUHI!</p>"
+        assert t.script == self.lvars.replace('=to_str', '=my_str') + \
+                         "_extend(('''<p>Hello ''', _to_str(name), '''!</p>''', ));"
+        globals().pop('my_str')
+        #
+        t = tenjin.Template(None, input=input, tostrfunc='str')
+        output = t.render({'name': None})
+        assert output == "<p>Hello None!</p>"
+        #
+        t = tenjin.Template(None, input=input, tostrfunc='str.upper')
+        output = t.render({'name': 'sos'})
+        assert output == "<p>Hello SOS!</p>"
+        # passed False as tostrfunc option then no function is used
+        t = tenjin.Template(None, input=input, tostrfunc=False)
+        output = t.render({'name': 'Haruhi'})
+        assert output == "<p>Hello Haruhi!</p>"
+        assert t.script == self.lvars.replace('=to_str', '=False') + \
+                         "_extend(('''<p>Hello ''', (name), '''!</p>''', ));"
+        #
+        def f(): t.render({'name': 123})
+        if python2:
+            with pytest.raises(TypeError, match=re.escape('sequence item 1: expected string, int found')):
+                f()
+        elif python3:
+            with pytest.raises(TypeError, match=re.escape('sequence item 1: expected str instance, int found')):
+                f()
+        # passed wrong function name as tostrfunc option then raises error
+        t = tenjin.Template(None, input=input, tostrfunc='johnsmith')
+        def f(): t.render({'name': 'Haruhi'})
+        #with pytest.raises(TypeError, match=re.escape("'NoneType' object is not callable")):
+        #    f()
+        with pytest.raises(NameError, match=re.escape(_errmsg("name 'johnsmith' is not defined"))):
+            f()
 
     def test_option_escapefunc(self):
         input = "<p>Hello ${name}!</p>"
-        if "passed escapefunc option then use it":
-            globals()['my_escape'] = lambda s: s.lower()
-            t = tenjin.Template(None, input=input, escapefunc='my_escape')
-            output = t.render({'name': 'Haruhi'})
-            ok (output) == "<p>Hello haruhi!</p>"
-            ok (t.script) == self.lvars.replace('=escape', '=my_escape') + \
-                             "_extend(('''<p>Hello ''', _escape(_to_str(name)), '''!</p>''', ));"
-            globals().pop('my_escape')
-            #
-            import html as _html_module
-            globals()['_html_module'] = _html_module
-            t = tenjin.Template(None, input=input, escapefunc='_html_module.escape')
-            output = t.render({'name': '&<>"'})
-            ok (output) == "<p>Hello &amp;&lt;&gt;&quot;!</p>"
-        if "passed False as escapefunc option then no function is used":
-            t = tenjin.Template(None, input=input, escapefunc=False)
-            output = t.render({'name': 'Haru&Kyon'})
-            ok (output) == "<p>Hello Haru&Kyon!</p>"
-            ok (t.script) == self.lvars.replace('=escape', '=False') + \
-                             "_extend(('''<p>Hello ''', _to_str(name), '''!</p>''', ));"
-        if "passed wrong function name as tostrfunc option then raises error":
-            t = tenjin.Template(None, input=input, escapefunc='kyonsmith')
-            def f(): t.render({'name': 'Haruhi'})
-            #ok (f).raises(TypeError, "'NoneType' object is not callable")
-            ok (f).raises(NameError, _errmsg("name 'kyonsmith' is not defined"))
+        # passed escapefunc option then use it
+        globals()['my_escape'] = lambda s: s.lower()
+        t = tenjin.Template(None, input=input, escapefunc='my_escape')
+        output = t.render({'name': 'Haruhi'})
+        assert output == "<p>Hello haruhi!</p>"
+        assert t.script == self.lvars.replace('=escape', '=my_escape') + \
+                         "_extend(('''<p>Hello ''', _escape(_to_str(name)), '''!</p>''', ));"
+        globals().pop('my_escape')
+        #
+        import html as _html_module
+        globals()['_html_module'] = _html_module
+        t = tenjin.Template(None, input=input, escapefunc='_html_module.escape')
+        output = t.render({'name': '&<>"'})
+        assert output == "<p>Hello &amp;&lt;&gt;&quot;!</p>"
+        # passed False as escapefunc option then no function is used
+        t = tenjin.Template(None, input=input, escapefunc=False)
+        output = t.render({'name': 'Haru&Kyon'})
+        assert output == "<p>Hello Haru&Kyon!</p>"
+        assert t.script == self.lvars.replace('=escape', '=False') + \
+                         "_extend(('''<p>Hello ''', _to_str(name), '''!</p>''', ));"
+        # passed wrong function name as tostrfunc option then raises error
+        t = tenjin.Template(None, input=input, escapefunc='kyonsmith')
+        def f(): t.render({'name': 'Haruhi'})
+        #with pytest.raises(TypeError, match=re.escape("'NoneType' object is not callable")):
+        #    f()
+        with pytest.raises(NameError, match=re.escape(_errmsg("name 'kyonsmith' is not defined"))):
+            f()
 
     def test_localvars_assignments_without_args_declaration(self):
         def _convert(input):
             return tenjin.Template(input=input).script
-        if spec("add local vars assignments before text only once."):
-            input = r"""
+        # add local vars assignments before text only once.
+        input = r"""
 <p>
   <?py x = 10 ?>
 </p>
 """[1:]
-            expected = r"""
+        expected = r"""
 _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''<p>\n''', ));
 x = 10
 _extend(('''</p>\n''', ));
 """[1:]
-            ok (_convert(input)) == expected
-        if spec("skips comments at the first lines."):
-            input = r"""
+        assert _convert(input) == expected
+        # skips comments at the first lines.
+        input = r"""
 <?py # coding: utf-8 ?>
 <?py      ### comment ?>
 <p>
   <?py x = 10 ?>
 </p>
 """[1:]
-            expected = r"""
+        expected = r"""
 # coding: utf-8
 ### comment
 _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''<p>\n''', ));
 x = 10
 _extend(('''</p>\n''', ));
 """[1:]
-            ok (_convert(input)) == expected
-        if spec("adds local vars assignments before statements."):
-            input = r"""
+        assert _convert(input) == expected
+        # adds local vars assignments before statements.
+        input = r"""
 <?py for item in items: ?>
   <?py x = 10 ?>
 <?py #endfor ?>
 </p>
 """[1:]
-            expected = r"""
+        expected = r"""
 _extend=_buf.extend;_to_str=to_str;_escape=escape; 
 for item in items:
     x = 10
 #endfor
 _extend(('''</p>\n''', ));
 """[1:]
-            ok (_convert(input)) == expected
+        assert _convert(input) == expected
 
     def test_localvars_assignments_with_args_declaration(self):
         def _convert(input):
             return tenjin.Template(input=input).script
-        if spec("args declaration exists before text then local vars assignments apprears at the same line with text."):
-            input = r"""
+        # args declaration exists before text then local vars assignments apprears at the same line with text.
+        input = r"""
 <?py # coding: utf-8 ?>
 <?py #@ARGS items ?>
 <p>
   <?py x = 10 ?>
 </p>
 """[1:]
-            expected = r"""
+        expected = r"""
 # coding: utf-8
 items = _context.get('items'); 
 _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''<p>\n''', ));
 x = 10
 _extend(('''</p>\n''', ));
 """[1:]
-            ok (_convert(input)) == expected
-        if spec("args declaration exists before statement then local vars assignments apprears at the same line with args declaration."):
-            input = r"""
+        assert _convert(input) == expected
+        # args declaration exists before statement then local vars assignments apprears at the same line with args declaration.
+        input = r"""
 <?py # coding: utf-8 ?>
 <?py #@ARGS items ?>
   <?py x = 10 ?>
 """[1:]
-            expected = r"""
+        expected = r"""
 # coding: utf-8
 _extend=_buf.extend;_to_str=to_str;_escape=escape; items = _context.get('items'); 
 x = 10
 """[1:]
-            ok (_convert(input)) == expected
-        if spec("'from __future__' statement exists then skip it."):
-            input = r"""
+        assert _convert(input) == expected
+        # 'from __future__' statement exists then skip it.
+        input = r"""
 <?py from __future__ import with_statement ?>
 <?py # coding: utf-8 ?>
 <?py #@ARGS item ?>
 item=${item}
 """[1:]
-            expected = r"""
+        expected = r"""
 from __future__ import with_statement
 # coding: utf-8
 item = _context.get('item'); 
 _extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''item=''', _escape(_to_str(item)), '''\n''', ));
 """[1:]
-            ok (_convert(input)) == expected
-            input = r"""
+        assert _convert(input) == expected
+        input = r"""
 <?py from __future__ import with_statement ?>
 <?py for item in items: ?>
   <p>${item}</p>
 <?py #endfor ?>
 """[1:]
-            expected = r"""
+        expected = r"""
 from __future__ import with_statement
 _extend=_buf.extend;_to_str=to_str;_escape=escape; 
 for item in items:
     _extend(('''  <p>''', _escape(_to_str(item)), '''</p>\n''', ));
 #endfor
 """[1:]
-            ok (_convert(input)) == expected
+        assert _convert(input) == expected
 
     def test_new_notation(self):
         input = r"""
@@ -452,7 +456,7 @@ c=''', _escape(_to_str(c)), '''
 d=''', _to_str(d), '''\n''', ));
 """
         t = tenjin.Template()
-        ok (t.convert(input)) == expected
+        assert t.convert(input) == expected
 
 
     def test_add_expr(self):
@@ -460,92 +464,92 @@ d=''', _to_str(d), '''\n''', ));
 not escape: #{var}
 escape: ${var}
 """
-        if spec("nothing is specified then both _to_str() and _escape() are used."):
-            t = tenjin.Template()
-            script = t.convert(input)
-            expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
+        # nothing is specified then both _to_str() and _escape() are used.
+        t = tenjin.Template()
+        script = t.convert(input)
+        expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
 not escape: ''', _to_str(var), '''
 escape: ''', _escape(_to_str(var)), '''\n''', ));
 """
-            ok (script) == expected
-        if spec("when tostrfunc is False then skips _to_str()."):
-            expected = r"""_extend=_buf.extend;_to_str=False;_escape=escape; _extend(('''
+        assert script == expected
+        # when tostrfunc is False then skips _to_str().
+        expected = r"""_extend=_buf.extend;_to_str=False;_escape=escape; _extend(('''
 not escape: ''', (var), '''
 escape: ''', _escape(var), '''\n''', ));
 """
-            t = tenjin.Template(tostrfunc=False)
-            ok (t.convert(input)) == expected
-        if spec("escapefunc is False then skips _escape()."):
-            expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=False; _extend(('''
+        t = tenjin.Template(tostrfunc=False)
+        assert t.convert(input) == expected
+        # escapefunc is False then skips _escape().
+        expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=False; _extend(('''
 not escape: ''', _to_str(var), '''
 escape: ''', _to_str(var), '''\n''', ));
 """
-            t = tenjin.Template(escapefunc=False)
-            ok (t.convert(input)) == expected
-        if spec("both tostr and escapefunc are False then skips _to_str() and _escape()."):
-            expected = r"""_extend=_buf.extend;_to_str=False;_escape=False; _extend(('''
+        t = tenjin.Template(escapefunc=False)
+        assert t.convert(input) == expected
+        # both tostr and escapefunc are False then skips _to_str() and _escape().
+        expected = r"""_extend=_buf.extend;_to_str=False;_escape=False; _extend(('''
 not escape: ''', (var), '''
 escape: ''', (var), '''\n''', ));
 """
-            t = tenjin.Template(tostrfunc=False, escapefunc=False)
-            ok (t.convert(input)) == expected
-        if spec("get_expr_and_flags() returns flag_tostr=False then ignores _escape()."):
-            tr = Tracer()
-            def fn(orig, *args):
-                expr, (flag_escape, flag_tostr) = orig(*args)
-                return expr, (flag_escape, False)
-            expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
+        t = tenjin.Template(tostrfunc=False, escapefunc=False)
+        assert t.convert(input) == expected
+        # get_expr_and_flags() returns flag_tostr=False then ignores _escape().
+        expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
 not escape: ''', (var), '''
 escape: ''', _escape(var), '''\n''', ));
 """
-            t = tenjin.Template()
-            tr.fake_method(t, get_expr_and_flags=fn)
-            ok (t.convert(input)) == expected
-        if spec("get_expr_and_flags() returns flag_escape=False then ignores _escape()."):
-            tr = Tracer()
-            def fn(orig, *args):
-                expr, (flag_escape, flag_tostr) = orig(*args)
-                return expr, (False, flag_tostr)
-            expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
+        t = tenjin.Template()
+        _orig_get_expr = t.get_expr_and_flags
+        def fn(*args):
+            expr, (flag_escape, flag_tostr) = _orig_get_expr(*args)
+            return expr, (flag_escape, False)
+        t.get_expr_and_flags = fn
+        assert t.convert(input) == expected
+        # get_expr_and_flags() returns flag_escape=False then ignores _escape().
+        expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
 not escape: ''', _to_str(var), '''
 escape: ''', _to_str(var), '''\n''', ));
 """
-            t = tenjin.Template()
-            tr.fake_method(t, get_expr_and_flags=fn)
-            ok (t.convert(input)) == expected
-        if spec("get_expr_and_flags() returns both flags False then ignores both _to_str() and _escape()."):
-            tr = Tracer()
-            def fn(orig, *args):
-                expr, (flag_escape, flag_tostr) = orig(*args)
-                return expr, (False, False)
-            expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
+        t = tenjin.Template()
+        _orig_get_expr = t.get_expr_and_flags
+        def fn(*args):
+            expr, (flag_escape, flag_tostr) = _orig_get_expr(*args)
+            return expr, (False, flag_tostr)
+        t.get_expr_and_flags = fn
+        assert t.convert(input) == expected
+        # get_expr_and_flags() returns both flags False then ignores both _to_str() and _escape().
+        expected = r"""_extend=_buf.extend;_to_str=to_str;_escape=escape; _extend(('''
 not escape: ''', (var), '''
 escape: ''', (var), '''\n''', ));
 """
-            t = tenjin.Template()
-            tr.fake_method(t, get_expr_and_flags=fn)
-            ok (t.convert(input)) == expected
+        t = tenjin.Template()
+        _orig_get_expr = t.get_expr_and_flags
+        def fn(*args):
+            expr, (flag_escape, flag_tostr) = _orig_get_expr(*args)
+            return expr, (False, False)
+        t.get_expr_and_flags = fn
+        assert t.convert(input) == expected
 
     def test_new_cycle(self):
         cycle = tenjin.helpers.new_cycle('odd', 'even')
-        ok (cycle())  == 'odd'
-        ok (cycle())  == 'even'
-        ok (cycle())  == 'odd'
-        ok (cycle())  == 'even'
+        assert cycle() == 'odd'
+        assert cycle() == 'even'
+        assert cycle() == 'odd'
+        assert cycle() == 'even'
         #
         cycle = tenjin.helpers.new_cycle('A', 'B', 'C')
-        ok (cycle()) == 'A'
-        ok (cycle()) == 'B'
-        ok (cycle()) == 'C'
-        ok (cycle()) == 'A'
-        ok (cycle()) == 'B'
-        ok (cycle()) == 'C'
+        assert cycle() == 'A'
+        assert cycle() == 'B'
+        assert cycle() == 'C'
+        assert cycle() == 'A'
+        assert cycle() == 'B'
+        assert cycle() == 'C'
         #
-        #ok (cycle()).is_a(EscapedStr)
-        #ok (cycle()).is_a(EscapedStr)
+        #assert isinstance(cycle(), EscapedStr)
+        #assert isinstance(cycle(), EscapedStr)
 
-    @test("'{}' is available in '${}' or '#{}', such as '${foo({'x':1})}'")
-    def _(self):
+    def test_curly_braces_in_expressions(self):
+        # '{}' is available in '${}' or '#{}', such as '${foo({'x':1})}'
         input = """
 <p>${f({'a':1})+g({'b':2})}</p>
 <p>#{f({'c':3})+g({'d':4})}</p>
@@ -556,9 +560,4 @@ escape: ''', (var), '''\n''', ));
 """
         t = tenjin.Template()
         script = t.convert(input)
-        ok (script) == expected
-
-
-
-if __name__ == '__main__':
-    run()
+        assert script == expected

@@ -7,13 +7,13 @@ name = "pytenjin"
 version = "1.1.1"
 description = "A fast and full-featured template engine based on embedded Python (maintained fork)"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.6"
 license = {text = "MIT"}
 authors = [
-    {name = "makoto kuwata", email = "kwa@kuwata-lab.com"}
+    {name = "Hyun-Gyu Kim", email = "babyworm@gmail.com"}
 ]
 maintainers = [
-    {name = "pytenjin maintainers"}
+    {name = "Hyun-Gyu Kim", email = "babyworm@gmail.com"}
 ]
 keywords = ["template", "engine", "tenjin", "embedded python"]
 classifiers = [
@@ -23,6 +23,8 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -34,9 +36,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pytenjin/pytenjin"
-Repository = "https://github.com/pytenjin/pytenjin"
-Issues = "https://github.com/pytenjin/pytenjin/issues"
+Homepage = "https://github.com/babyworm/pytenjin"
+Repository = "https://github.com/babyworm/pytenjin"
+Issues = "https://github.com/babyworm/pytenjin/issues"
 
 [project.scripts]
 pytenjin = "tenjin.cli:main"

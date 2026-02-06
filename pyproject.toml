@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytenjin"
+version = "1.1.1"
+description = "A fast and full-featured template engine based on embedded Python (maintained fork)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "makoto kuwata", email = "kwa@kuwata-lab.com"}
+]
+maintainers = [
+    {name = "pytenjin maintainers"}
+]
+keywords = ["template", "engine", "tenjin", "embedded python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup",
+]
+
+[project.urls]
+Homepage = "https://github.com/pytenjin/pytenjin"
+Repository = "https://github.com/pytenjin/pytenjin"
+Issues = "https://github.com/pytenjin/pytenjin/issues"
+
+[project.scripts]
+pytenjin = "tenjin.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

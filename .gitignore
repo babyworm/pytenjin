@@ -10,6 +10,8 @@ build/
 .eggs/
 *.cache
 tests/_test_*
+_test_*
+tests/data/users_guide/test_fragmentcache/cache.d/
 .tox/
 .venv/
 venv/

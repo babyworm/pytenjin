@@ -1,10 +1,12 @@
 """PyTenjin - a fast and full-featured template engine based on embedded Python.
 
+Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com)
+License: MIT License
+
 This is a maintained fork of the original Tenjin template engine.
 Original project: https://pypi.org/project/Tenjin/
 Original author: makoto kuwata (kuwata-lab.com)
-
-See User's Guide and examples for details.
+See THIRD_PARTY_LICENSES for the original license.
 """
 
 # Import everything from the core tenjin module, including private names.

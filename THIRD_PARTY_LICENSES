@@ -1,6 +1,15 @@
+This project is a maintained fork of the original Tenjin template engine.
+The following third-party license applies to the original work:
+
+================================================================================
+Tenjin (original)
+Author: makoto kuwata (kwa@kuwata-lab.com)
+Source: http://www.kuwata-lab.com/tenjin/
+================================================================================
+
 MIT License
 
-Copyright (c) 2024-present Hyun-Gyu Kim (babyworm@gmail.com)
+copyright(c) 2007-2012 kuwata-lab.com all rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

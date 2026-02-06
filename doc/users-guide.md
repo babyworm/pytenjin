@@ -105,19 +105,18 @@ Tenjin is a very fast and full-featured template engine implemented in pure Pyth
 
 ### Install
 
-pyTenjin supports Python 2.4 or later. Python 3 is also supported.
+PyTenjin supports Python 3.8 or later.
 
 ```console
-$ sudo easy_install Tenjin
+$ pip install pytenjin
 ```
 
-Or:
+Or install from source:
 
 ```console
-$ wget http://pypi.python.org/packages/source/T/Tenjin/Tenjin-X.X.X.tar.gz
-$ tar xzf Tenjin-X.X.X.tar.gz
-$ cd Tenjin-X.X.X/
-$ sudo python setup.py install
+$ git clone https://github.com/babyworm/pytenjin.git
+$ cd pytenjin
+$ pip install .
 ```
 
 ### Benchmark
@@ -744,6 +743,8 @@ See the following description.
 
 #### Python 2.x
 
+> **NOTE:** This section describes Python 2.x behavior and is kept for historical reference only. PyTenjin requires Python 3.8+, where all strings are unicode by default.
+
 > **NOTE:**
 >
 > It is planned to change pyTenjin to be unicode-based templates in the future release. This is because a lot of O/R Mapper or helper libraries assume string to be unicode object. However pyTenjin will provides users to select str-based or uicode-based by `tenjin.set_template_encoding()` function.
@@ -854,6 +855,8 @@ Module `tenjin.helpers` provides basic helper functions.
   >>> to_str(u'日本語')  # unicode object is encoded into str
   '\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e'
   ```
+
+  > **NOTE:** The `u'...'` unicode prefix examples above are Python 2.x specific. In Python 3, all strings are unicode by default, so the `u` prefix is unnecessary and `to_str()` simply converts values to `str`.
 
 **escape(*str*)**
 : Escape HTML special characters. This is same as `tenjin.html.escape_html()`.
@@ -1265,7 +1268,7 @@ It is able to capture parital of output. You can use this feature as an alternat
 **views/blog-post.pyhtml : one partial capture ('sidebar')**
 
 ```html
-<?py from __future__ import with_statement ?>
+<?py ## from __future__ import with_statement  -- Not needed in Python 3 ?>
 <?py #@ARGS blog_post, recent_posts ?>
 <h2>#{blog_post['title']}</h2>
 <div class="blog-post">
@@ -1517,6 +1520,8 @@ INFO:root:[tenjin.TextCacheStorage] load cache (file='/home/user/example.pyhtml.
 ```
 
 ### Google App Engine Support
+
+> **NOTE:** Google App Engine's legacy runtime (webapp framework) used in these examples is no longer supported. This section is kept for historical reference. The `tenjin.gae` module may not work with modern App Engine environments.
 
 Tenjin supports Google App Engine. All you have to do is just call `tenjin.gae.init()`.
 
@@ -2177,8 +2182,8 @@ It is able to specify function names of `escape()` and `to_str()` which are used
 ```python
 import tenjin
 from tenjin.helpers import *
-import cgi
-engine = tenjin.Engine(path=['views'], escapefunc="cgi.escape", tostrfunc="str")
+import html
+engine = tenjin.Engine(path=['views'], escapefunc="html.escape", tostrfunc="str")
 print(engine.get_template('page.pyhtml').script)
 ```
 
@@ -2195,7 +2200,7 @@ print(engine.get_template('page.pyhtml').script)
 
 ```console
 $ python main.py
-_extend=_buf.extend;_to_str=str;_escape=cgi.escape; _extend(('''<p>
+_extend=_buf.extend;_to_str=str;_escape=html.escape; _extend(('''<p>
   escaped:     ''', _escape(_to_str(value)), '''
   not escaped: ''', _to_str(value), '''
 </p>\n''', ));
@@ -2595,6 +2600,8 @@ syntaxerr.pyhtml:5:12: invalid syntax
 
 ### I got 'SyntaxError: encoding declaration in Unicode string'
 
+> **NOTE:** This issue is primarily relevant to Python 2.x. In Python 3, templates are always unicode-based, so encoding declarations in templates are generally unnecessary.
+
 This is because you added magic comment (such as `<?py # -*- coding: utf-8 -*- ?>`) in template file AND you specified template encoding by `tenjin.set_template_encoding()` or pass encoding option to `tenjin.Engine()`.
 
 Solution:
@@ -2603,6 +2610,8 @@ Solution:
 - If you want to add magic comment, call `tenjin.set_template_encoding()` with `encode` option, or don't call it.
 
 ### I got UnicodeDecodeError, but I can't find what is wrong
+
+> **NOTE:** This issue is primarily relevant to Python 2.x, where mixing `str` and `unicode` types frequently caused encoding errors. In Python 3, strings are always unicode, making these errors much less common.
 
 If you got UnicodeDecodeError, you should do the following solutions.
 
@@ -2700,12 +2709,14 @@ tenjin.set_template_encoding('cp932')   # or shift_jis
 ### Escaping Function
 
 ```python
-tenjin.Template.escapefunc = 'cgi.escape'
+tenjin.Template.escapefunc = 'html.escape'
 ## or
-engine = tenjin.Engine(escapefunc='cgi.escape')
+engine = tenjin.Engine(escapefunc='html.escape')
 ```
 
 ### Change Behaviour of `to_str()`
+
+> **NOTE:** The examples below using `u'...'` unicode prefix and the distinction between `str` and `unicode` types are Python 2.x specific. In Python 3, all strings are unicode by default, and `to_str()` simply converts values to `str`.
 
 ```python
 ## encode unicode into str, and unchange str.

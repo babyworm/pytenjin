@@ -203,11 +203,7 @@ languages = [
   ('ja', 'Japanese'),
 ]
 
-import urllib
-try:
-    from urllib import unquote
-except:
-    from urllib.parse import unquote
+from urllib.parse import unquote
 
 def link_to(label, action=None, id=None):
     buf = ['/app']
@@ -301,6 +297,8 @@ $ python main.py
 
 ## Google App Engine
 
+> **NOTE:** Google App Engine's legacy runtime (webapp framework) used in these examples is no longer supported by Google. This section is kept for historical reference only.
+
 **app.yaml**
 
 ```yaml
@@ -328,8 +326,6 @@ handlers:
 ###     $ mkdir lib
 ###     $ cp ../../lib2/tenjin.py lib
 ###
-
-from __future__ import with_statement
 
 import sys, os
 from google.appengine.ext import webapp

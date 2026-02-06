@@ -1,5 +1,5 @@
 $ python main.py
-_extend=_buf.extend;_to_str=str;_escape=cgi.escape; _extend(('''<p>
+_extend=_buf.extend;_to_str=str;_escape=html.escape; _extend(('''<p>
   escaped:     ''', _escape(_to_str(value)), '''
   not escaped: ''', _to_str(value), '''
 </p>\n''', ));

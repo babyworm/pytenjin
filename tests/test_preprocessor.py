@@ -319,8 +319,8 @@ return _buf;};</script>
 
     @test("JS_FUNC: contains JS functions necessary.")
     def _(self):
-        ok (tenjin.JS_FUNC).matches('function _E\(.*?\)')
-        ok (tenjin.JS_FUNC).matches('function _S\(.*?\)')
+        ok (tenjin.JS_FUNC).matches(r'function _E\(.*?\)')
+        ok (tenjin.JS_FUNC).matches(r'function _S\(.*?\)')
 
     @test("JS_FUNC: is a EscapedStr.")
     def _(self):

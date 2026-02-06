@@ -697,15 +697,15 @@ _extend(('''</ul>\n''', ));
         #self.errormsg = None
         #self._test()
         #
-        self.input    = "Hello #{cgi.escape('Haru&Kyon')}!"
+        self.input    = "Hello #{html.escape('Haru&Kyon')}!"
         self.expected = "Hello Haru&amp;Kyon!"
         #
-        globals().pop('cgi', None)
+        globals().pop('html', None)
         self.exception = NameError
-        self.errormsg = "name 'cgi' is not defined"
+        self.errormsg = "name 'html' is not defined"
         self._test()
         #
-        self.options  = "-r cgi,os,sys"
+        self.options  = "-r html,os,sys"
         self.exception = None
         self.errormsg = None
         self._test()
@@ -716,10 +716,10 @@ _extend(('''</ul>\n''', ));
         self.errormsg = '-r hogeratta: module not found.'
         self._test()
 
-    def test_escapefunc(self):  # --escapefunc=cgi.escape
-        self.options  = "-s --escapefunc=cgi.escape"
+    def test_escapefunc(self):  # --escapefunc=html.escape
+        self.options  = "-s --escapefunc=html.escape"
         self.input    = INPUT
-        self.expected = SOURCE.replace('=escape', '=cgi.escape')
+        self.expected = SOURCE.replace('=escape', '=html.escape')
         self._test()
 
     def test_tostrfunc(self):  # --tostrfunc=str

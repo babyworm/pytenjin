@@ -302,7 +302,7 @@ class Main(object):
             import yaml
         except ImportError:
             raise self.error("PyYAML is required to parse YAML file or string.")
-        context = yaml.load(yamlstr)
+        context = yaml.safe_load(yamlstr)
         if not isinstance(context, dict):
             raise self.error("%s: not a mapping (dictionary)." % errstr)
         return context

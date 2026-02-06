@@ -7,29 +7,23 @@ Original author: makoto kuwata (kuwata-lab.com)
 See User's Guide and examples for details.
 """
 
-# Import everything from the core tenjin module
+# Import everything from the core tenjin module, including private names.
+# The original tenjin was a single-file module, so all names (including _private)
+# were accessible via `import tenjin`. We preserve this for backward compatibility.
+import tenjin.tenjin as _core
+
 from tenjin.tenjin import *  # noqa: F401,F403
-from tenjin.tenjin import (  # explicit re-exports
-    Template,
-    Engine,
-    SafeTemplate,
-    SafeEngine,
-    Preprocessor,
-    SafePreprocessor,
-    TemplateSyntaxError,
-    CacheStorage,
-    MarshalCacheStorage,
-    TextCacheStorage,
-    MemoryCacheStorage,
-    KeyValueStore,
-    MemoryBaseStore,
-    FileBaseStore,
-    helpers,
-    escaped,
-    html,
-    create_module,
-    set_template_encoding,
-)
+
+# Re-export all names (including private) from the core module
+# so that code like `tenjin._read_binary_file` continues to work.
+import types as _types
+for _name in dir(_core):
+    _obj = getattr(_core, _name)
+    if _name.startswith('__') and _name.endswith('__'):
+        continue  # skip dunder attributes
+    if not isinstance(_obj, _types.ModuleType) or _name in ('helpers', 'escaped', 'html', 'gae'):
+        globals()[_name] = _obj
+del _name, _obj, _types
 
 __version__ = "1.1.1"
 __license__ = "MIT License"

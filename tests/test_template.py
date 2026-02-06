@@ -56,9 +56,9 @@ class TemplateTest(object):
                 if input:     input    = input.replace(ch, "\r")
                 if source:    source   = source.replace(ch, "\r")
                 if expected:  expected = expected.replace(ch, "\r")
-            if testopts.get('escapefunc') == 'cgi.escape':
+            if testopts.get('escapefunc') == '_html_module.escape':
                 #import cgi
-                #context['escape'] = cgi.escape
+                #context['escape'] = _html_module.escape
                 pass
             if testopts.get('tostrfunc') == 'str':
                 #context['to_str'] = str
@@ -314,9 +314,9 @@ _extend(('''</ul>\n''', ));
                              "_extend(('''<p>Hello ''', _escape(_to_str(name)), '''!</p>''', ));"
             globals().pop('my_escape')
             #
-            global cgi
-            import cgi
-            t = tenjin.Template(None, input=input, escapefunc='cgi.escape')
+            import html as _html_module
+            globals()['_html_module'] = _html_module
+            t = tenjin.Template(None, input=input, escapefunc='_html_module.escape')
             output = t.render({'name': '&<>"'})
             ok (output) == "<p>Hello &amp;&lt;&gt;\"!</p>"
         if "passed False as escapefunc option then no function is used":

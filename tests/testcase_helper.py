@@ -171,7 +171,7 @@ class TestCaseHelper:
         input = read_file(filename)
         if untabify:
             input = input.expandtabs()
-        ydoc = yaml.load(input)
+        ydoc = yaml.safe_load(input)
         return ydoc
     load_testdata = staticmethod(load_testdata)
 

@@ -1,3 +1,7 @@
+[![PyPI version](https://badge.fury.io/py/pytenjin.svg)](https://pypi.org/project/pytenjin/)
+[![Python versions](https://img.shields.io/pypi/pyversions/pytenjin.svg)](https://pypi.org/project/pytenjin/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # PyTenjin
 
 This is a maintained fork of the original [Tenjin](https://github.com/kwatch/tenjin) template engine, which is no longer actively maintained.
@@ -70,7 +74,7 @@ print(html)
 
 ## Template Syntax
 
-pyTenjin supports two expression syntaxes:
+PyTenjin supports multiple expression syntaxes:
 
 - **`{=...=}`** - escaped expression (recommended)
 - **`{==...==}`** - raw expression (recommended)
